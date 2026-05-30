@@ -1,0 +1,8 @@
+@use './fonts';
+@use './tokens' as *;
+@use './reset';
+@use './mixins' as *;
+
+body {
+  @include scrollbar();
+}

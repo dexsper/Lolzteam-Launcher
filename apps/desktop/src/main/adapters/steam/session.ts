@@ -1,0 +1,129 @@
+import {
+  EAuthSessionGuardType,
+  EAuthTokenPlatformType,
+  LoginSession,
+} from 'steam-session';
+import { generateSteamGuardCode } from './mafile';
+
+export type SessionError =
+  | { kind: 'needs-email-code' }
+  | { kind: 'needs-totp' }
+  | { kind: 'needs-device-confirm' }
+  | { kind: 'needs-email-confirm' }
+  | { kind: 'bad-credentials'; message: string }
+  | { kind: 'unknown'; message: string };
+
+export interface SessionSuccess {
+  refreshToken: string;
+  accessToken: string | null;
+  steamId: string;
+  accountName: string;
+}
+
+export type SessionResult =
+  | { ok: true; data: SessionSuccess }
+  | { ok: false; error: SessionError };
+
+interface GuardAction {
+  type: EAuthSessionGuardType;
+}
+
+const waitAuth = (session: LoginSession): Promise<void> =>
+  new Promise((resolve, reject) => {
+    session.on('authenticated', () => resolve());
+    session.on('timeout', () => reject(new Error('Login timed out')));
+    session.on('error', (err) => reject(err instanceof Error ? err : new Error(String(err))));
+  });
+
+interface LoginParams {
+  login: string;
+  password: string;
+  sharedSecret: string | null;
+  emailCode?: string;
+}
+
+export const acquireRefreshToken = async (
+  params: LoginParams,
+): Promise<SessionResult> => {
+  const session = new LoginSession(EAuthTokenPlatformType.SteamClient);
+
+  let start;
+  try {
+    start = await session.startWithCredentials({
+      accountName: params.login,
+      password: params.password,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/Invalid|password|credential/i.test(msg)) {
+      return { ok: false, error: { kind: 'bad-credentials', message: msg } };
+    }
+    return { ok: false, error: { kind: 'unknown', message: msg } };
+  }
+
+  if (start.actionRequired) {
+    const actions = (start.validActions ?? []) as GuardAction[];
+    const has = (t: EAuthSessionGuardType) => actions.some((a) => a.type === t);
+
+    if (has(EAuthSessionGuardType.DeviceCode) && params.sharedSecret) {
+      const code = generateSteamGuardCode(params.sharedSecret);
+      try {
+        await session.submitSteamGuardCode(code);
+      } catch (err) {
+        return {
+          ok: false,
+          error: {
+            kind: 'unknown',
+            message: 'Steam Guard TOTP отклонён: ' + (err instanceof Error ? err.message : String(err)),
+          },
+        };
+      }
+    } else if (has(EAuthSessionGuardType.EmailCode)) {
+      if (!params.emailCode) {
+        return { ok: false, error: { kind: 'needs-email-code' } };
+      }
+      try {
+        await session.submitSteamGuardCode(params.emailCode);
+      } catch (err) {
+        return {
+          ok: false,
+          error: {
+            kind: 'unknown',
+            message: 'Email-код отклонён: ' + (err instanceof Error ? err.message : String(err)),
+          },
+        };
+      }
+    } else if (has(EAuthSessionGuardType.DeviceCode)) {
+      // DeviceCode guard but no shared_secret on hand — caller can fetch the
+      // mafile and retry with a TOTP.
+      return { ok: false, error: { kind: 'needs-totp' } };
+    } else if (has(EAuthSessionGuardType.DeviceConfirmation)) {
+      return { ok: false, error: { kind: 'needs-device-confirm' } };
+    } else if (has(EAuthSessionGuardType.EmailConfirmation)) {
+      return { ok: false, error: { kind: 'needs-email-confirm' } };
+    }
+  }
+
+  try {
+    await waitAuth(session);
+  } catch (err) {
+    return {
+      ok: false,
+      error: { kind: 'unknown', message: err instanceof Error ? err.message : String(err) },
+    };
+  }
+
+  if (!session.refreshToken || !session.steamID) {
+    return { ok: false, error: { kind: 'unknown', message: 'No refresh token returned' } };
+  }
+
+  return {
+    ok: true,
+    data: {
+      refreshToken: session.refreshToken,
+      accessToken: session.accessToken || null,
+      steamId: session.steamID.toString(),
+      accountName: session.accountName ?? params.login,
+    },
+  };
+};

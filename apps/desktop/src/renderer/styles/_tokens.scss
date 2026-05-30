@@ -1,0 +1,120 @@
+// =============================================================================
+//  LZT palette (1:1 from the source CSS the user provided 2026-05-27).
+//  Do NOT add Tailwind / utility frameworks here.
+// =============================================================================
+
+// brand
+$color-brand:                  rgb(0, 186, 120);     // --dad_mbabc_color / primary
+$color-loaderbar:              rgb(18, 76, 50);
+
+// surfaces
+$color-page-bg:                rgb(20, 20, 20);      // --pageBackground
+$color-content-bg:             rgb(28, 28, 28);      // --contentBackground
+$color-primary-darker:         rgb(36, 36, 36);
+$color-primary-dark:           rgb(48, 48, 48);
+$color-primary-medium:         rgb(0, 186, 120);     // brand alias
+$color-primary-lightish:       rgb(35, 148, 188);
+$color-primary-light:          rgb(18, 76, 50);
+$color-primary-lighter:        rgb(34, 142, 93);
+$color-primary-lighter-still:  rgb(48, 48, 48);
+$color-primary-lightest:       rgb(83, 91, 99);
+
+$color-tooltip-bg:             rgb(54, 54, 54);
+$color-nobita-avatar-bg:       #176093;
+
+// text
+$color-content-text:           rgb(214, 214, 214);
+$color-text-ctrl-text:         #000000;
+$color-text-ctrl-bg:           #f5f5f5;
+$color-dimmed-text:            rgb(117, 147, 180);
+$color-muted-text:             rgb(148, 148, 148);
+$color-faint-text:             rgb(234, 234, 234);
+
+// accents / states
+$color-inline-mod:             rgb(255, 243, 200);
+$color-overlay-mask:           rgb(0, 0, 0);
+
+// secondary (warnings / errors)
+$color-secondary-darker:       rgb(136, 68, 68);
+$color-secondary-dark:         #8f6c3f;
+$color-secondary-medium:       #e68c17;
+$color-secondary-light:        rgb(234, 76, 76);
+$color-secondary-lighter:      #f9d9b0;
+$color-secondary-lightest:     #fff4e5;
+
+// semantic aliases
+$color-bg:                     $color-page-bg;
+$color-surface:                $color-content-bg;
+$color-surface-raised:         $color-primary-darker;
+$color-surface-overlay:        $color-primary-dark;
+$color-border:                 rgba(255, 255, 255, 0.06);
+$color-border-strong:          rgba(255, 255, 255, 0.12);
+$color-text:                   $color-faint-text;
+$color-text-soft:              $color-content-text;
+$color-text-muted:             $color-muted-text;
+$color-text-dim:               $color-dimmed-text;
+$color-accent:                 $color-brand;
+$color-accent-soft:            $color-primary-lighter;
+$color-danger:                 $color-secondary-light;
+$color-warning:                $color-secondary-medium;
+$color-info:                   $color-primary-lightish;
+
+// spacing scale (4px grid)
+$space-1: 0.25rem;   //  4
+$space-2: 0.5rem;    //  8
+$space-3: 0.75rem;   // 12
+$space-4: 1rem;      // 16
+$space-5: 1.25rem;   // 20
+$space-6: 1.5rem;    // 24
+$space-8: 2rem;      // 32
+$space-10: 2.5rem;   // 40
+$space-12: 3rem;     // 48
+$space-16: 4rem;     // 64
+
+// radius
+$radius-xs: 4px;
+$radius-sm: 6px;
+$radius-md: 10px;
+$radius-lg: 14px;
+$radius-xl: 20px;
+$radius-pill: 999px;
+
+// typography
+$font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+$font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
+$fs-xs: 0.75rem;
+$fs-sm: 0.875rem;
+$fs-base: 1rem;
+$fs-lg: 1.125rem;
+$fs-xl: 1.25rem;
+$fs-2xl: 1.5rem;
+$fs-3xl: 1.875rem;
+
+$lh-tight: 1.2;
+$lh-base: 1.45;
+$lh-loose: 1.6;
+
+// shadows
+$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+$shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+$shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
+$shadow-focus: 0 0 0 2px rgba(0, 186, 120, 0.45);
+
+// motion
+$ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+$ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+$duration-fast: 120ms;
+$duration-base: 180ms;
+$duration-slow: 260ms;
+
+// z-index
+$z-base: 1;
+$z-sticky: 10;
+$z-overlay: 100;
+$z-modal: 1000;
+$z-toast: 2000;
+
+// layout
+$sidebar-width: 240px;
+$topbar-height: 56px;

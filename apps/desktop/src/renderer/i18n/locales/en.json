@@ -1,0 +1,145 @@
+{
+  "common": {
+    "close": "Close",
+    "retry": "Retry"
+  },
+  "sidebar": {
+    "inventory": "My accounts",
+    "market": "Market",
+    "wallet": "Wallet",
+    "settings": "Settings"
+  },
+  "topbar": {
+    "title": "My accounts",
+    "logout": "Sign out"
+  },
+  "login": {
+    "lede": "Sign in with your LZT account to access purchased accounts and log into Steam, Telegram, and other services in one click.",
+    "openInApp": "Sign in here",
+    "busyInApp": "Opening…",
+    "openBrowser": "Use browser",
+    "busyBrowser": "Opening browser…",
+    "hint": "Authorization runs through lzt.market OAuth. The token is stored locally, encrypted by the system keystore (DPAPI on Windows / Keychain on macOS)."
+  },
+  "loginSteps": {
+    "fetchingCredentials": "Fetching account data",
+    "acquiringToken": "Acquiring Steam token",
+    "fetchingEmailCode": "Waiting for email code",
+    "killingSteam": "Closing Steam",
+    "writingVdf": "Writing configs",
+    "encryptingToken": "Encrypting token",
+    "launchingSteam": "Launching Steam",
+    "buildingTdata": "Building session",
+    "sendingTgCode": "Sending Telegram code",
+    "fetchingTgCode": "Waiting for market code",
+    "verifyingTgCode": "Verifying code",
+    "killingTelegram": "Closing Telegram",
+    "writingTdata": "Writing session",
+    "launchingTelegram": "Launching Telegram",
+    "injectingCookies": "Applying session cookies",
+    "launchingBrowser": "Opening browser"
+  },
+  "loginModal": {
+    "title": "Signing in to “{{title}}”",
+    "success": "Done — {{service}} is launching.",
+    "browserService": "the account"
+  },
+  "inventory": {
+    "loading": "Loading your accounts…",
+    "error": "Couldn’t load accounts from lzt.market.",
+    "empty": "You don’t have any purchased accounts yet.",
+    "emptyUnsupported": "Your inventory has no accounts for supported services (Steam, Telegram).",
+    "openMarket": "Open lzt.market",
+    "refresh": "Refresh",
+    "searchPlaceholder": "Search by name, game, country…",
+    "searchClear": "Clear search",
+    "noResults": "No accounts match your search.",
+    "sort": {
+      "purchased": "Date",
+      "price": "Price",
+      "warranty": "Warranty",
+      "asc": "Ascending",
+      "desc": "Descending"
+    },
+    "filter": {
+      "all": "All"
+    },
+    "card": {
+      "warrantyDays_one": "{{count}} day warranty",
+      "warrantyDays_other": "{{count}} days warranty",
+      "warrantyHours_one": "{{count}} hour warranty",
+      "warrantyHours_other": "{{count}} hours warranty",
+      "login": "Sign in",
+      "busy": "Launching…",
+      "loginTooltip": "Sign in to this account",
+      "unsupportedTooltip": "Service not supported yet",
+      "loginFailedFallback": "Sign-in failed",
+      "callError": "Call error",
+      "warrantyWarnTitle": "This account has an active warranty",
+      "warrantyWarnBody": "If sign-in needs a Steam Guard code, the launcher will request the mafile — that action cancels the account's active warranty ({{warranty}}). Continue signing in?",
+      "warrantyWarnConfirm": "Sign in anyway",
+      "warrantyWarnCancel": "Cancel",
+      "purchasedLabel": "Purchased",
+      "priceLabel": "Price",
+      "warrantyLabel": "Warranty",
+      "purchasedRecently": "Just now",
+      "purchasedDays_one": "{{count}} day ago",
+      "purchasedDays_other": "{{count}} days ago",
+      "purchasedHours_one": "{{count}} hour ago",
+      "purchasedHours_other": "{{count}} hours ago",
+      "steam": {
+        "valid": "Valid",
+        "banned": "Banned",
+        "limited": "Limited",
+        "mfa": "SDA",
+        "hoursShort": "h",
+        "games_one": "{{count}} game",
+        "games_other": "{{count}} games",
+        "lastSeenToday": "Online today",
+        "lastSeenDays_one": "{{count}} day ago",
+        "lastSeenDays_other": "{{count}} days ago"
+      },
+      "telegram": {
+        "premium": "Premium",
+        "spamBlock": "Spam block",
+        "noSpamBlock": "No spam block",
+        "premiumUntil": "Premium until {{date}}"
+      }
+    }
+  },
+  "settings": {
+    "heading": "Settings",
+    "subheading": "Launcher options and connected services",
+    "telegram": {
+      "title": "Telegram",
+      "description": "Path to the portable Telegram.exe. When you sign in, the launcher writes the session next to this file and launches it already logged in.",
+      "fieldLabel": "Telegram.exe",
+      "placeholderNoFile": "No file selected",
+      "pickButton": "Pick a file",
+      "pickDialogTitle": "Pick Telegram.exe (portable build)",
+      "statusOk": "File set",
+      "statusMissing": "Path not set — Telegram login unavailable",
+      "clear": "Reset"
+    },
+    "language": {
+      "title": "Language",
+      "description": "Launcher interface language. Defaults to the system language.",
+      "system": "System",
+      "ru": "Русский",
+      "en": "English"
+    },
+    "steam": {
+      "title": "Steam",
+      "description": "Steam account sign-in options.",
+      "invisibleLabel": "Sign in invisible",
+      "invisibleHint": "Steam will launch with the \"Invisible\" status instead of \"Online\"."
+    },
+    "cache": {
+      "title": "Account cache",
+      "description": "Purchased accounts are cached on disk so the list loads instantly. Clear it to force a fresh fetch from lzt.market.",
+      "clearButton": "Clear cache",
+      "clearing": "Clearing…",
+      "cleared": "Cache cleared"
+    }
+  }
+}

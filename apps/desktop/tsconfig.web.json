@@ -1,0 +1,28 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": [],
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["src/renderer/*"],
+      "~styles/*": ["src/renderer/styles/*"],
+      "@shared-ipc": ["../../packages/shared-ipc/src/index.ts"],
+      "@shared-ipc/*": ["../../packages/shared-ipc/src/*"],
+      "@shared-types": ["../../packages/shared-types/src/index.ts"],
+      "@shared-types/*": ["../../packages/shared-types/src/*"],
+      "@adapter-contract": ["../../packages/adapter-contract/src/index.ts"]
+    }
+  },
+  "include": [
+    "src/renderer/**/*",
+    "../../packages/shared-ipc/src/**/*",
+    "../../packages/shared-types/src/**/*",
+    "../../packages/adapter-contract/src/**/*"
+  ]
+}

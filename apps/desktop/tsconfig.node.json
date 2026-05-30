@@ -1,0 +1,30 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["node", "electron"],
+    "lib": ["ES2023"],
+    "baseUrl": ".",
+    "paths": {
+      "@main/*": ["src/main/*"],
+      "@shared-ipc": ["../../packages/shared-ipc/src/index.ts"],
+      "@shared-ipc/*": ["../../packages/shared-ipc/src/*"],
+      "@shared-types": ["../../packages/shared-types/src/index.ts"],
+      "@shared-types/*": ["../../packages/shared-types/src/*"],
+      "@adapter-contract": ["../../packages/adapter-contract/src/index.ts"],
+      "@market-sdk": ["../../packages/market-sdk/src/index.ts"]
+    }
+  },
+  "include": [
+    "src/main/**/*",
+    "src/preload/**/*",
+    "electron.vite.config.ts",
+    "../../packages/shared-ipc/src/**/*",
+    "../../packages/shared-types/src/**/*",
+    "../../packages/adapter-contract/src/**/*",
+    "../../packages/market-sdk/src/**/*"
+  ]
+}

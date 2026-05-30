@@ -1,0 +1,382 @@
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: $space-6;
+  padding: 0 24px 24px 24px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-4;
+  flex-wrap: wrap;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+}
+
+.filter {
+  @include button-reset;
+  @include clickable;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-3;
+  border-radius: $radius-pill;
+  background: $color-surface-raised;
+  border: 1px solid transparent;
+  color: $color-text-soft;
+  font-size: $fs-sm;
+  transition: background $duration-fast $ease-out, color $duration-fast $ease-out, border-color $duration-fast $ease-out;
+
+  &:hover {
+    border-color: $color-border-strong;
+    color: $color-text;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.filterActive {
+  background: $color-accent;
+  color: #06170f;
+  border-color: $color-accent;
+
+  &:hover {
+    background: $color-accent;
+    color: #06170f;
+  }
+}
+
+.filterCount {
+  font-family: $font-mono;
+  font-size: $fs-xs;
+  opacity: 0.8;
+}
+
+.refresh {
+  @include button-reset;
+  @include clickable;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-3;
+  border-radius: $radius-sm;
+  background: $color-surface-raised;
+  border: 1px solid $color-border;
+  color: $color-text-soft;
+  font-size: $fs-sm;
+
+  &:hover {
+    color: $color-text;
+    border-color: $color-border-strong;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-4;
+  flex-wrap: wrap;
+}
+
+.searchBox {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 220px;
+  max-width: 360px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: $space-3;
+  color: $color-text-muted;
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: $space-2 $space-8 $space-2 36px;
+  border-radius: $radius-sm;
+  background: $color-surface-overlay;
+  border: 1px solid $color-border;
+  color: $color-text;
+  font-size: $fs-sm;
+
+  &::placeholder {
+    color: $color-text-muted;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.searchClear {
+  @include button-reset;
+  @include clickable;
+  position: absolute;
+  right: $space-2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: $radius-sm;
+  color: $color-text-muted;
+
+  &:hover {
+    color: $color-text;
+    background: $color-surface-raised;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.sort {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  flex-wrap: wrap;
+}
+
+.sortKeys {
+  display: inline-flex;
+  gap: $space-1;
+  padding: 4px;
+  border-radius: $radius-sm;
+  background: $color-surface-overlay;
+  border: 1px solid $color-border;
+}
+
+.sortBtn {
+  @include button-reset;
+  @include clickable;
+  padding: $space-1 $space-3;
+  border-radius: calc(#{$radius-sm} - 2px);
+  font-size: $fs-sm;
+  color: $color-text-soft;
+  background: transparent;
+  transition: color $duration-fast $ease-out, background $duration-fast $ease-out;
+
+  &:hover {
+    color: $color-text;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.sortBtnActive {
+  background: $color-accent;
+  color: #06170f;
+  font-weight: 600;
+
+  &:hover {
+    color: #06170f;
+  }
+}
+
+.sortDir {
+  @include button-reset;
+  @include clickable;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-3;
+  border-radius: $radius-sm;
+  background: $color-surface-raised;
+  border: 1px solid $color-border;
+  color: $color-text-soft;
+  font-size: $fs-sm;
+
+  &:hover {
+    color: $color-text;
+    border-color: $color-border-strong;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.noResults {
+  @include surface(0);
+  padding: $space-12;
+  margin: $space-6 auto 0;
+  max-width: 480px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-3;
+  color: $color-text-soft;
+}
+
+.noResultsIcon {
+  color: $color-text-muted;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  animation: grid-enter 280ms $ease-out;
+}
+
+@keyframes grid-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sentinel {
+  height: 1px;
+}
+
+.skeletonFilter {
+  @include skeleton;
+  width: 84px;
+  height: 32px;
+  border-radius: $radius-pill;
+}
+
+.skeletonCard {
+  @include surface(1);
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  padding: $space-4;
+}
+
+.skeletonHead {
+  display: flex;
+  gap: $space-3;
+  align-items: center;
+}
+
+.skeletonThumb {
+  @include skeleton;
+  width: 48px;
+  height: 48px;
+  border-radius: $radius-md;
+  flex-shrink: 0;
+}
+
+.skeletonHeadText {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+  flex: 1;
+  min-width: 0;
+}
+
+.skeletonLine {
+  @include skeleton;
+  height: 12px;
+}
+
+.skeletonLineSm {
+  width: 40%;
+}
+
+.skeletonLineMd {
+  width: 80%;
+  height: 16px;
+}
+
+.skeletonMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-2;
+}
+
+.skeletonPrice {
+  @include skeleton;
+  width: 72px;
+  height: 20px;
+}
+
+.skeletonWarranty {
+  @include skeleton;
+  width: 64px;
+  height: 18px;
+  border-radius: $radius-pill;
+}
+
+.skeletonButton {
+  @include skeleton;
+  height: 36px;
+  border-radius: $radius-sm;
+}
+
+.state {
+  @include surface(0);
+  padding: $space-12;
+  margin: $space-12 auto 0;
+  max-width: 480px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $space-3;
+  color: $color-text-soft;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+.danger {
+  color: $color-danger;
+}
+
+.retry {
+  @include button-reset;
+  @include clickable;
+  padding: $space-2 $space-4;
+  border-radius: $radius-sm;
+  background: $color-accent;
+  color: #06170f;
+  font-weight: 600;
+  font-size: $fs-sm;
+
+  &:hover {
+    filter: brightness(1.08);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

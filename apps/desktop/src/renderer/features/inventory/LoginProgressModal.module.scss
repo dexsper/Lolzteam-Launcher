@@ -1,0 +1,141 @@
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-2 $space-3;
+  border-radius: $radius-sm;
+  font-size: $fs-sm;
+  color: $color-text-muted;
+  transition: color $duration-fast $ease-out, background $duration-fast $ease-out;
+}
+
+.icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: $color-surface-overlay;
+  border: 1px solid $color-border;
+  color: $color-text-muted;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.4;
+}
+
+.label {
+  flex: 1;
+  line-height: $lh-base;
+}
+
+.detail {
+  color: $color-text-dim;
+  font-size: $fs-xs;
+}
+
+.pending {
+  // base; nothing extra
+}
+
+.active {
+  color: $color-text;
+  background: rgba(0, 186, 120, 0.06);
+
+  .icon {
+    background: rgba(0, 186, 120, 0.18);
+    border-color: $color-accent;
+    color: $color-accent;
+  }
+}
+
+.done {
+  color: $color-text-soft;
+
+  .icon {
+    background: $color-accent;
+    border-color: $color-accent;
+    color: $color-text-ctrl-text;
+  }
+}
+
+.failed {
+  color: $color-text;
+
+  .icon {
+    background: rgba(234, 76, 76, 0.18);
+    border-color: $color-danger;
+    color: $color-danger;
+  }
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-2;
+  padding: $space-3;
+  margin-top: $space-4;
+  border-radius: $radius-sm;
+  background: rgba(234, 76, 76, 0.08);
+  border: 1px solid rgba(234, 76, 76, 0.32);
+  color: $color-danger;
+  font-size: $fs-sm;
+  line-height: $lh-base;
+
+  svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+}
+
+.success {
+  margin-top: $space-4;
+  padding: $space-3;
+  border-radius: $radius-sm;
+  background: rgba(0, 186, 120, 0.08);
+  border: 1px solid rgba(0, 186, 120, 0.32);
+  color: $color-accent;
+  font-size: $fs-sm;
+  text-align: center;
+}
+
+.close {
+  margin-top: $space-5;
+  width: 100%;
+  padding: $space-3 $space-4;
+  border: 1px solid $color-border-strong;
+  background: $color-surface-overlay;
+  border-radius: $radius-md;
+  color: $color-text;
+  font-size: $fs-sm;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background $duration-fast $ease-out, border-color $duration-fast $ease-out;
+
+  &:hover {
+    background: $color-primary-dark;
+    border-color: $color-text-muted;
+  }
+}

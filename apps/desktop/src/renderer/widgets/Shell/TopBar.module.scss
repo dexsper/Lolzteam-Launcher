@@ -1,0 +1,114 @@
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+
+  .brandLogo {
+    width: 28px;
+    height: 28px;
+  }
+
+  .profile {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .profileTrigger {
+    @include button-reset;
+    @include clickable;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: $radius-md;
+    transition: background 120ms ease;
+
+    &:hover {
+      background: $color-surface-overlay;
+    }
+  }
+
+  .avatar,
+  .avatarFallback {
+    width: 32px;
+    height: 32px;
+    border-radius: $radius-pill;
+    flex-shrink: 0;
+  }
+
+  .avatar {
+    object-fit: cover;
+  }
+
+  .avatarFallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: $color-surface-overlay;
+    color: $color-text-muted;
+  }
+
+  .profileText {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.2;
+    min-width: 0;
+  }
+
+  .username {
+    @include truncate;
+    max-width: 160px;
+    font-weight: 600;
+    font-size: 14px;
+    color: $color-text;
+  }
+
+  .balance {
+    font-size: 12px;
+    color: $color-text-muted;
+  }
+
+  .chevron {
+    color: $color-text-muted;
+    transition: transform 160ms ease;
+  }
+
+  .chevronOpen {
+    transform: rotate(180deg);
+  }
+
+  .menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: $z-sticky;
+    min-width: 180px;
+    padding: 6px;
+    background: $color-surface-raised;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    box-shadow: $shadow-lg;
+  }
+
+  .menuItem {
+    @include button-reset;
+    @include clickable;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: $radius-sm;
+    font-size: 14px;
+    color: $color-text;
+    transition: background 120ms ease;
+
+    &:hover {
+      background: $color-surface-overlay;
+    }
+  }
+}

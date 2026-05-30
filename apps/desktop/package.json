@@ -1,0 +1,93 @@
+{
+  "name": "@lolzteam/desktop",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Lolzteam Launcher — desktop app",
+  "type": "module",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "pack": "electron-vite build && electron-builder --dir",
+    "dist": "electron-vite build && electron-builder",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@lolzteam/adapter-contract": "workspace:*",
+    "@lolzteam/market-sdk": "workspace:*",
+    "@lolzteam/shared-ipc": "workspace:*",
+    "@lolzteam/shared-types": "workspace:*",
+    "@mtcute/convert": "^0.29.7",
+    "@mtcute/node": "^0.29.7",
+    "@tanstack/react-query": "^5.62.7",
+    "@tanstack/react-router": "^1.92.0",
+    "electron-log": "^5.2.4",
+    "i18next": "^26.3.0",
+    "ky": "^1.7.4",
+    "lucide-react": "^0.469.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-i18next": "^17.0.8",
+    "steam-session": "^1.9.2",
+    "zustand": "^5.0.2"
+  },
+  "devDependencies": {
+    "@tanstack/router-vite-plugin": "^1.92.0",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^5.0.0",
+    "sass": "^1.83.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5",
+    "vitest": "^4.1.7"
+  },
+  "build": {
+    "appId": "com.lolzteam.launcher",
+    "productName": "Lolzteam Launcher",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.ico"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "icon": "build/icon.icns"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "protocols": [
+      {
+        "name": "Lolzteam Launcher",
+        "schemes": [
+          "lolzteamlauncher"
+        ]
+      }
+    ]
+  }
+}

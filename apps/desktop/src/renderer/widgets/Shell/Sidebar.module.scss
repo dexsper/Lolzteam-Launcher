@@ -1,0 +1,53 @@
+.dock {
+  position: fixed;
+  left: 50%;
+  bottom: $space-5;
+  transform: translateX(-50%);
+  z-index: $z-sticky;
+
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  padding: $space-2;
+  border-radius: $radius-pill;
+  background: rgba(28, 28, 28, 0.82);
+  border: 1px solid $color-border-strong;
+  box-shadow: $shadow-lg;
+  backdrop-filter: blur(12px);
+}
+
+.navItem {
+  @include button-reset;
+  @include clickable;
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-4;
+  border-radius: $radius-pill;
+  color: $color-text-soft;
+  font-size: $fs-sm;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.06);
+    color: $color-text;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.navItemActive {
+  background: $color-accent;
+  color: #fff;
+
+  &:hover:not(:disabled) {
+    background: $color-accent;
+    color: #fff;
+  }
+}

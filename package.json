@@ -1,0 +1,32 @@
+{
+  "name": "lolzteam-launcher",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Desktop launcher for lzt.market buyers — one-click login into purchased accounts.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.18"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @lolzteam/desktop dev",
+    "build": "pnpm -r --filter=!@lolzteam/desktop build && pnpm --filter @lolzteam/desktop build",
+    "pack": "pnpm --filter @lolzteam/desktop pack",
+    "dist": "pnpm --filter @lolzteam/desktop dist",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "biome check .",
+    "format": "biome format --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "typescript": "^5.7.2"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild",
+      "@biomejs/biome",
+      "@parcel/watcher"
+    ]
+  }
+}

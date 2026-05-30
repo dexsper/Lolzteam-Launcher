@@ -1,0 +1,32 @@
+node_modules/
+.pnpm-store/
+.pnpm-debug.log*
+
+# build output
+**/dist/
+**/out/
+**/.vite/
+**/release/
+**/build/
+
+# editor
+.idea/
+.vscode/*
+.claude/*
+.DS_Store
+Thumbs.db
+
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# logs
+**/logs/
+*.log
+
+# os-specific
+*.swp
+
+# Electron
+**/.electron-builder.cache/

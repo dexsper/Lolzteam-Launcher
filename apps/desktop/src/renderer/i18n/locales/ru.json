@@ -1,0 +1,157 @@
+{
+  "common": {
+    "close": "Закрыть",
+    "retry": "Повторить"
+  },
+  "sidebar": {
+    "inventory": "Аккаунты",
+    "market": "Маркет",
+    "wallet": "Кошелёк",
+    "settings": "Настройки"
+  },
+  "topbar": {
+    "title": "Мои аккаунты",
+    "logout": "Выйти"
+  },
+  "login": {
+    "lede": "Войдите через аккаунт LZT, чтобы получить доступ к купленным аккаунтам и заходить в Steam, Telegram и другие сервисы в один клик.",
+    "openInApp": "Войти в окне",
+    "busyInApp": "Открываем…",
+    "openBrowser": "Через браузер",
+    "busyBrowser": "Открываем браузер…",
+    "hint": "Авторизация идёт через OAuth lzt.market. Токен хранится локально, зашифрованный системным хранилищем (DPAPI на Windows / Keychain на macOS)."
+  },
+  "loginSteps": {
+    "fetchingCredentials": "Получаю данные аккаунта",
+    "acquiringToken": "Получаю токен Steam",
+    "fetchingEmailCode": "Жду код с почты",
+    "killingSteam": "Закрываю Steam",
+    "writingVdf": "Записываю конфиги",
+    "encryptingToken": "Шифрую токен",
+    "launchingSteam": "Запускаю Steam",
+    "buildingTdata": "Собираю сессию",
+    "sendingTgCode": "Отправляю код в Telegram",
+    "fetchingTgCode": "Жду код с маркета",
+    "verifyingTgCode": "Проверяю код",
+    "killingTelegram": "Закрываю Telegram",
+    "writingTdata": "Записываю сессию",
+    "launchingTelegram": "Запускаю Telegram",
+    "injectingCookies": "Применяю cookie-сессию",
+    "launchingBrowser": "Открываю браузер"
+  },
+  "loginModal": {
+    "title": "Вход в «{{title}}»",
+    "success": "Готово — {{service}} запускается.",
+    "browserService": "аккаунт"
+  },
+  "inventory": {
+    "loading": "Загружаем ваши аккаунты…",
+    "error": "Не удалось загрузить аккаунты с lzt.market.",
+    "empty": "У вас пока нет купленных аккаунтов.",
+    "emptyUnsupported": "В вашем инвентаре нет аккаунтов поддерживаемых сервисов (Steam, Telegram).",
+    "openMarket": "Открыть lzt.market",
+    "refresh": "Обновить",
+    "searchPlaceholder": "Поиск по названию, игре, стране…",
+    "searchClear": "Очистить поиск",
+    "noResults": "Ничего не найдено по запросу.",
+    "sort": {
+      "purchased": "Дата",
+      "price": "Цена",
+      "warranty": "Гарантия",
+      "asc": "По возрастанию",
+      "desc": "По убыванию"
+    },
+    "filter": {
+      "all": "Все"
+    },
+    "card": {
+      "warrantyDays_one": "{{count}} день гарантии",
+      "warrantyDays_few": "{{count}} дня гарантии",
+      "warrantyDays_many": "{{count}} дней гарантии",
+      "warrantyDays_other": "{{count}} дн. гарантии",
+      "warrantyHours_one": "{{count}} час гарантии",
+      "warrantyHours_few": "{{count}} часа гарантии",
+      "warrantyHours_many": "{{count}} часов гарантии",
+      "warrantyHours_other": "{{count}} ч. гарантии",
+      "login": "Войти",
+      "busy": "Запуск…",
+      "loginTooltip": "Войти в аккаунт",
+      "unsupportedTooltip": "Сервис пока не поддерживается",
+      "loginFailedFallback": "Не удалось войти",
+      "callError": "Ошибка вызова",
+      "warrantyWarnTitle": "На аккаунте активна гарантия",
+      "warrantyWarnBody": "Если для входа потребуется код Steam Guard, лаунчер запросит mafile — это действие снимает активную гарантию на аккаунт ({{warranty}}). Продолжить вход?",
+      "warrantyWarnConfirm": "Войти всё равно",
+      "warrantyWarnCancel": "Отмена",
+      "purchasedLabel": "Куплен",
+      "priceLabel": "Цена",
+      "warrantyLabel": "Гарантия",
+      "purchasedRecently": "Только что",
+      "purchasedDays_one": "{{count}} день назад",
+      "purchasedDays_few": "{{count}} дня назад",
+      "purchasedDays_many": "{{count}} дней назад",
+      "purchasedDays_other": "{{count}} дн. назад",
+      "purchasedHours_one": "{{count}} час назад",
+      "purchasedHours_few": "{{count}} часа назад",
+      "purchasedHours_many": "{{count}} часов назад",
+      "purchasedHours_other": "{{count}} ч. назад",
+      "steam": {
+        "valid": "Валидный",
+        "banned": "Бан",
+        "limited": "Лимит",
+        "mfa": "SDA",
+        "hoursShort": "ч",
+        "games_one": "{{count}} игра",
+        "games_few": "{{count}} игры",
+        "games_many": "{{count}} игр",
+        "games_other": "{{count}} игр",
+        "lastSeenToday": "Сегодня в сети",
+        "lastSeenDays_one": "{{count}} день назад",
+        "lastSeenDays_few": "{{count}} дня назад",
+        "lastSeenDays_many": "{{count}} дней назад",
+        "lastSeenDays_other": "{{count}} дн. назад"
+      },
+      "telegram": {
+        "premium": "Premium",
+        "spamBlock": "Спамблок",
+        "noSpamBlock": "Без спамблока",
+        "premiumUntil": "Premium до {{date}}"
+      }
+    }
+  },
+  "settings": {
+    "heading": "Настройки",
+    "subheading": "Параметры лаунчера и подключённых сервисов",
+    "telegram": {
+      "title": "Telegram",
+      "description": "Путь к портативному Telegram.exe. При входе лаунчер пишет сессию рядом с этим файлом и запускает его уже залогиненным.",
+      "fieldLabel": "Telegram.exe",
+      "placeholderNoFile": "Файл не выбран",
+      "pickButton": "Выбрать файл",
+      "pickDialogTitle": "Выберите Telegram.exe (портативная версия)",
+      "statusOk": "Файл указан",
+      "statusMissing": "Путь не задан — вход в Telegram недоступен",
+      "clear": "Сбросить"
+    },
+    "language": {
+      "title": "Язык",
+      "description": "Язык интерфейса лаунчера. По умолчанию — язык системы.",
+      "system": "Системный",
+      "ru": "Русский",
+      "en": "English"
+    },
+    "steam": {
+      "title": "Steam",
+      "description": "Параметры входа в Steam-аккаунты.",
+      "invisibleLabel": "Входить в невидимке",
+      "invisibleHint": "При входе Steam будет запускаться со статусом «Невидимка» вместо «В сети»."
+    },
+    "cache": {
+      "title": "Кеш аккаунтов",
+      "description": "Купленные аккаунты кешируются на диск, чтобы список открывался мгновенно. Сбросьте кеш, чтобы принудительно загрузить свежие данные с lzt.market.",
+      "clearButton": "Сбросить кеш",
+      "clearing": "Сброс…",
+      "cleared": "Кеш сброшен"
+    }
+  }
+}

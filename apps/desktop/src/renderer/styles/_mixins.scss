@@ -1,0 +1,85 @@
+@use './tokens' as *;
+
+@mixin focus-ring {
+  outline: none;
+  box-shadow: $shadow-focus;
+}
+
+@mixin truncate($lines: 1) {
+  @if $lines == 1 {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  } @else {
+    display: -webkit-box;
+    -webkit-line-clamp: $lines;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+@mixin scrollbar($track: transparent, $thumb: rgba(255, 255, 255, 0.12)) {
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  &::-webkit-scrollbar-track {
+    background: $track;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: $thumb;
+    border-radius: $radius-pill;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+      background-clip: padding-box;
+    }
+  }
+}
+
+@mixin surface($level: 0) {
+  @if $level == 0 {
+    background: $color-surface;
+  } @else if $level == 1 {
+    background: $color-surface-raised;
+  } @else {
+    background: $color-surface-overlay;
+  }
+  border: 1px solid $color-border;
+  border-radius: $radius-md;
+}
+
+@mixin button-reset {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+@mixin clickable {
+  cursor: pointer;
+  transition: background-color $duration-base $ease-out, transform $duration-fast $ease-out,
+    box-shadow $duration-base $ease-out, border-color $duration-base $ease-out;
+}
+
+@mixin skeleton {
+  background: linear-gradient(
+    90deg,
+    $color-surface-overlay 25%,
+    $color-primary-lighter-still 37%,
+    $color-surface-overlay 63%
+  );
+  background-size: 400% 100%;
+  border-radius: $radius-sm;
+  animation: skeleton-shimmer 1.4s ease infinite;
+}
+
+@keyframes skeleton-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: 0 0; }
+}
