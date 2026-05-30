@@ -15,25 +15,19 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@mtcute/convert": "^0.29.7",
+    "@mtcute/node": "^0.29.7",
+    "electron-log": "^5.2.4",
+    "ky": "^1.7.4",
+    "steam-session": "^1.9.2"
+  },
+  "devDependencies": {
     "@lolzteam/adapter-contract": "workspace:*",
     "@lolzteam/market-sdk": "workspace:*",
     "@lolzteam/shared-ipc": "workspace:*",
     "@lolzteam/shared-types": "workspace:*",
-    "@mtcute/convert": "^0.29.7",
-    "@mtcute/node": "^0.29.7",
     "@tanstack/react-query": "^5.62.7",
     "@tanstack/react-router": "^1.92.0",
-    "electron-log": "^5.2.4",
-    "i18next": "^26.3.0",
-    "ky": "^1.7.4",
-    "lucide-react": "^0.469.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-i18next": "^17.0.8",
-    "steam-session": "^1.9.2",
-    "zustand": "^5.0.2"
-  },
-  "devDependencies": {
     "@tanstack/router-vite-plugin": "^1.92.0",
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.2",
@@ -42,10 +36,16 @@
     "electron": "^33.2.1",
     "electron-builder": "^25.1.8",
     "electron-vite": "^5.0.0",
+    "i18next": "^26.3.0",
+    "lucide-react": "^0.469.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-i18next": "^17.0.8",
     "sass": "^1.83.0",
     "typescript": "^5.7.2",
     "vite": "^6.0.5",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.7",
+    "zustand": "^5.0.2"
   },
   "build": {
     "appId": "com.lolzteam.launcher",
@@ -54,9 +54,13 @@
       "output": "release",
       "buildResources": "build"
     },
+    "afterPack": "build/after-pack.cjs",
     "files": [
       "out/**/*",
-      "package.json"
+      "package.json",
+      "!node_modules/better-sqlite3/{deps,build/Release/obj,src}/**",
+      "!node_modules/**/*.{c,cc,cpp,h,hpp,ts,map,md,markdown}",
+      "!node_modules/**/{test,tests,__tests__,example,examples,docs,.github}/**"
     ],
     "win": {
       "target": [
