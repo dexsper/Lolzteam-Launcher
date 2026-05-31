@@ -1,5 +1,10 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { IPC_CHANNELS, type AccountsCategoryEvent, type LoginProgress } from '@shared-ipc';
+import {
+  IPC_CHANNELS,
+  type AccountsCategoryEvent,
+  type LoginProgress,
+  type UpdateStatus,
+} from '@shared-ipc';
 import type {
   AccountDetails,
   AccountSummary,
@@ -67,6 +72,13 @@ const api = {
     openLogs: () => invoke<void>(IPC_CHANNELS.APP_OPEN_LOGS),
     exportLog: () =>
       invoke<{ ok: boolean; path?: string }>(IPC_CHANNELS.APP_EXPORT_LOG),
+  },
+  updater: {
+    check: () => invoke<void>(IPC_CHANNELS.UPDATE_CHECK),
+    download: () => invoke<void>(IPC_CHANNELS.UPDATE_DOWNLOAD),
+    install: () => invoke<void>(IPC_CHANNELS.UPDATE_INSTALL),
+    onStatus: (h: (p: UpdateStatus) => void) =>
+      on<UpdateStatus>(IPC_CHANNELS.UPDATE_STATUS, h),
   },
 } as const;
 

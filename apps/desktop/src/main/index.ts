@@ -10,6 +10,7 @@ import { registerAppIpc } from './ipc/app';
 import { registerAccountsIpc } from './ipc/accounts';
 import { registerLoginIpc } from './ipc/login';
 import { registerSettingsIpc } from './ipc/settings';
+import { registerUpdaterIpc } from './updater';
 import { LOLZ_CONFIG } from '@shared-ipc';
 
 log.initialize();
@@ -60,6 +61,7 @@ app.whenReady().then(async () => {
   registerAccountsIpc();
   registerLoginIpc();
   registerSettingsIpc();
+  registerUpdaterIpc();
 
   consumeDeepLinks(process.argv);
 

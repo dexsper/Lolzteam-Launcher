@@ -3,6 +3,14 @@
     "close": "Close",
     "retry": "Retry"
   },
+  "update": {
+    "available": "A new version {{version}} is available",
+    "download": "Download",
+    "downloading": "Downloading update…",
+    "ready": "Version {{version}} is ready to install",
+    "restart": "Restart",
+    "error": "Update failed"
+  },
   "sidebar": {
     "inventory": "My accounts",
     "market": "Market",

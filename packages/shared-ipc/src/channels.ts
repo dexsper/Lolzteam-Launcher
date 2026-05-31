@@ -19,6 +19,14 @@ export interface AccountsCategoryEvent {
   done: boolean;
 }
 
+export type UpdateStatus =
+  | { state: 'checking' }
+  | { state: 'available'; version: string; notes: string | null }
+  | { state: 'not-available' }
+  | { state: 'downloading'; percent: number; transferred: number; total: number }
+  | { state: 'downloaded'; version: string }
+  | { state: 'error'; message: string };
+
 export const IPC_CHANNELS = {
   AUTH_OPEN_IN_APP: 'auth:open-in-app',
   AUTH_OPEN_BROWSER: 'auth:open-browser',
@@ -46,6 +54,11 @@ export const IPC_CHANNELS = {
   APP_GET_VERSION: 'app:get-version',
   APP_OPEN_LOGS: 'app:open-logs',
   APP_EXPORT_LOG: 'app:export-log',
+
+  UPDATE_CHECK: 'update:check',
+  UPDATE_DOWNLOAD: 'update:download',
+  UPDATE_INSTALL: 'update:install',
+  UPDATE_STATUS: 'update:status',
 } as const;
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
@@ -69,6 +82,9 @@ export interface IpcRequestMap {
   [IPC_CHANNELS.APP_GET_VERSION]: void;
   [IPC_CHANNELS.APP_OPEN_LOGS]: void;
   [IPC_CHANNELS.APP_EXPORT_LOG]: void;
+  [IPC_CHANNELS.UPDATE_CHECK]: void;
+  [IPC_CHANNELS.UPDATE_DOWNLOAD]: void;
+  [IPC_CHANNELS.UPDATE_INSTALL]: void;
 }
 
 export interface IpcResponseMap {
@@ -90,6 +106,9 @@ export interface IpcResponseMap {
   [IPC_CHANNELS.APP_GET_VERSION]: string;
   [IPC_CHANNELS.APP_OPEN_LOGS]: void;
   [IPC_CHANNELS.APP_EXPORT_LOG]: { ok: boolean; path?: string };
+  [IPC_CHANNELS.UPDATE_CHECK]: void;
+  [IPC_CHANNELS.UPDATE_DOWNLOAD]: void;
+  [IPC_CHANNELS.UPDATE_INSTALL]: void;
 }
 
 export interface IpcEventMap {
@@ -98,6 +117,7 @@ export interface IpcEventMap {
   [IPC_CHANNELS.ACCOUNT_LOGIN_PROGRESS]: LoginProgress;
   [IPC_CHANNELS.ACCOUNTS_CATEGORY]: AccountsCategoryEvent;
   [IPC_CHANNELS.SETTINGS_CHANGED]: SettingsResponse;
+  [IPC_CHANNELS.UPDATE_STATUS]: UpdateStatus;
 }
 
 export type { AuthTokenPayload };
