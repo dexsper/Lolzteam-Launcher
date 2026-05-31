@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "pnpm --filter @lolzteam/desktop dev",
-    "build": "pnpm -r --filter=!@lolzteam/desktop build && pnpm --filter @lolzteam/desktop build",
+    "build": "pnpm --filter @lolzteam/desktop build",
     "pack": "pnpm --filter @lolzteam/desktop pack",
     "dist": "pnpm --filter @lolzteam/desktop dist",
     "typecheck": "pnpm -r typecheck",

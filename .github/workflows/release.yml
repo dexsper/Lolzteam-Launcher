@@ -30,9 +30,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build workspace packages
-        run: pnpm -r --filter=!@lolzteam/desktop build
-
       - name: Build & publish desktop
         run: pnpm --filter @lolzteam/desktop exec electron-vite build && pnpm --filter @lolzteam/desktop exec electron-builder --win --publish always
         env:
