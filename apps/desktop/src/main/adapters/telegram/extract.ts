@@ -15,6 +15,8 @@ export interface TelegramCreds {
   apiHash: string | null;
   /** Pre-baked auth_key from the market, when present. Lets us skip phone+code login entirely. */
   authKey: TelegramAuthKey | null;
+  userId: number | null;
+  deviceModel: string | null;
 }
 
 const asString = (v: unknown): string | null =>
@@ -56,6 +58,7 @@ interface TelegramJsonShape {
   twoFA?: unknown;
   phone?: unknown;
   dc_id?: unknown;
+  device?: unknown;
 }
 
 interface LoginDataShape {
@@ -147,6 +150,8 @@ export const extractTelegramCreds = (details: AccountDetails): TelegramCreds | n
   const apiId = typeof tj?.app_id === 'number' ? tj.app_id : null;
   const apiHash = asString(tj?.app_hash);
   const authKey = extractAuthKey(secrets, tj);
+  const userId = toPositiveInt(secrets.telegram_id);
+  const deviceModel = asString(tj?.device);
 
   // Phone is required for the fallback (phone+code) flow AND as a human-readable label
   // in the success message. If both authKey and phone are missing — we can't do anything.
@@ -156,8 +161,8 @@ export const extractTelegramCreds = (details: AccountDetails): TelegramCreds | n
   if (phoneRaw && !isPlausiblePhone(phone)) {
     // Bad phone but maybe authKey is fine — keep the authKey path open.
     if (!authKey) return null;
-    return { phone: '', password, apiId, apiHash, authKey };
+    return { phone: '', password, apiId, apiHash, authKey, userId, deviceModel };
   }
 
-  return { phone, password, apiId, apiHash, authKey };
+  return { phone, password, apiId, apiHash, authKey, userId, deviceModel };
 };

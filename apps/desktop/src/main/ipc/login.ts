@@ -11,7 +11,6 @@ import { getAdapter } from '../adapters';
 import {
   fetchEmailCode,
   fetchSteamMafile,
-  fetchTelegramLoginCode,
   getAccountDetails,
 } from '../services/market';
 import { getSettings } from '../settings/settings-store';
@@ -43,7 +42,6 @@ const buildCtx = async (
   abortSignal,
   onProgress: (event) => broadcast(itemId, event),
   fetchEmailCode: (id) => fetchEmailCode(id, abortSignal),
-  fetchTelegramCode: (id, since) => fetchTelegramLoginCode(id, abortSignal, since),
   fetchSteamMafile: (id) => fetchSteamMafile(id),
   settings: await getSettings(),
 });

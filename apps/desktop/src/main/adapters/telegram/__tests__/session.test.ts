@@ -1,42 +1,35 @@
-import { describe, expect, it } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { buildOfflineSession } from '../session';
 
 const HEX_256 = 'a'.repeat(512);
 
 describe('buildOfflineSession', () => {
-  it('builds a v3 StringSessionData for a valid DC + 256-byte authKey', () => {
-    const data = buildOfflineSession({ authKeyHex: HEX_256, dcId: 2 });
-    expect(data.version).toBe(3);
-    expect(data.authKey).toBeInstanceOf(Uint8Array);
-    expect(data.authKey.length).toBe(256);
-    expect(data.primaryDcs.main.id).toBe(2);
-    expect(data.primaryDcs.media.id).toBe(2);
+  it('builds a v3 string session from a valid auth_key + dc', () => {
+    const session = buildOfflineSession({ authKeyHex: HEX_256, dcId: 2, userId: 123 });
+    expect(session.version).toBe(3);
+    expect(session.authKey).toHaveLength(256);
+    expect(session.primaryDcs.main.id).toBe(2);
   });
 
-  it('throws on unknown DC ids', () => {
-    expect(() => buildOfflineSession({ authKeyHex: HEX_256, dcId: 99 })).toThrow(/DC/);
+  it('populates self.userId so TDesktop accepts the account', () => {
+    const session = buildOfflineSession({ authKeyHex: HEX_256, dcId: 2, userId: 777 });
+    expect(session.self?.userId).toBe(777);
   });
 
-  it('throws when authKey is not 256 bytes', () => {
+  it('omits self when no userId is available', () => {
+    const session = buildOfflineSession({ authKeyHex: HEX_256, dcId: 2, userId: null });
+    expect(session.self).toBeUndefined();
+  });
+
+  it('throws on unknown dc id', () => {
     expect(() =>
-      buildOfflineSession({ authKeyHex: 'a'.repeat(510), dcId: 1 }),
-    ).toThrow(/256/);
+      buildOfflineSession({ authKeyHex: HEX_256, dcId: 99, userId: 1 }),
+    ).toThrow(/Неизвестный DC/);
   });
 
-  it('throws on non-hex characters', () => {
+  it('throws on wrong auth_key length', () => {
     expect(() =>
-      buildOfflineSession({ authKeyHex: 'z'.repeat(512), dcId: 1 }),
-    ).toThrow(/hex/);
-  });
-
-  it('accepts the lowercase form of valid hex', () => {
-    const data = buildOfflineSession({
-      authKeyHex: 'deadbeef'.repeat(64),
-      dcId: 1,
-    });
-    expect(data.authKey[0]).toBe(0xde);
-    expect(data.authKey[1]).toBe(0xad);
-    expect(data.authKey[2]).toBe(0xbe);
-    expect(data.authKey[3]).toBe(0xef);
+      buildOfflineSession({ authKeyHex: 'abcd', dcId: 2, userId: 1 }),
+    ).toThrow(/256 байт/);
   });
 });

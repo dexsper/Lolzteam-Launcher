@@ -37,13 +37,3 @@ export interface EmailCodeData {
 export type EmailCodeResponse =
   | { item?: unknown; codeData: EmailCodeData }
   | { error: string; errors?: string[] | string };
-
-export interface TelegramLoginCodeData {
-  code: string;
-  date: number;
-}
-
-export type TelegramLoginCodeResponse =
-  | { item?: unknown; codes: TelegramLoginCodeData[] }
-  | { item?: unknown; codeData: TelegramLoginCodeData }
-  | { error: string; errors?: string[] | string };

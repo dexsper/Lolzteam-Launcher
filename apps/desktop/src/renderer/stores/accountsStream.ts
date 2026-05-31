@@ -36,13 +36,22 @@ export const mergeWithStream = (base: AccountSummary[]): AccountSummary[] => {
   return [...kept, ...[...touched.values()].flat()];
 };
 
-export const startAccountsStream = () => {
+export const startAccountsStream = (only?: StreamService) => {
   const st = useAccountsStream.getState();
   if (st.streaming) return;
   st.setStreaming(true);
-  st.setLoaded(() => new Set());
-  st.resetAccumulator();
-  void window.launcher.accounts.listStream().catch(() => st.setStreaming(false));
+  if (only) {
+    st.setLoaded((prev) => {
+      const next = new Set(prev);
+      next.delete(only);
+      return next;
+    });
+    st.streamed.delete(only);
+  } else {
+    st.setLoaded(() => new Set());
+    st.resetAccumulator();
+  }
+  void window.launcher.accounts.listStream(only).catch(() => st.setStreaming(false));
 };
 
 export const useAccountsStreamController = () => {

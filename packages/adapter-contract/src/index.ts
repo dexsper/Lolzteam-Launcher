@@ -40,10 +40,6 @@ export type LoginStep =
   | 'launching-steam'
   // telegram
   | 'building-tdata'
-  | 'sending-tg-code'
-  | 'awaiting-tg-code'
-  | 'fetching-tg-code'
-  | 'verifying-tg-code'
   | 'killing-telegram'
   | 'writing-tdata'
   | 'launching-telegram'
@@ -62,8 +58,6 @@ export interface AdapterContext {
   abortSignal: AbortSignal;
   onProgress?: (event: LoginProgressEvent) => void;
   fetchEmailCode?: (itemId: number) => Promise<string | null>;
-  /** `sinceUnix` (epoch seconds): only return a code issued strictly after it, so stale/rejected codes aren't replayed on retry. */
-  fetchTelegramCode?: (itemId: number, sinceUnix?: number) => Promise<string | null>;
   /** Fetches the Steam Guard mafile `shared_secret`. Cancels the item's guarantee — call only when a TOTP guard is required. */
   fetchSteamMafile?: (itemId: number) => Promise<string | null>;
   settings?: LauncherSettings;

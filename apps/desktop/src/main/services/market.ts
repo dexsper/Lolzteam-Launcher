@@ -421,48 +421,6 @@ export const fetchEmailCode = async (
   return null;
 };
 
-export const fetchTelegramLoginCode = async (
-  itemId: number,
-  signal: AbortSignal,
-  sinceUnix = 0,
-): Promise<string | null> => {
-  const token = await loadToken();
-  if (!token) return null;
-  // Only accept a code issued strictly after `sinceUnix`. Telegram re-invokes
-  // the code callback after rejecting a stale one; without this watermark we'd
-  // hand back the same dead code forever (the retry loop seen in the logs).
-  const pick = (
-    resp: Awaited<ReturnType<MarketClient['getTelegramLoginCode']>>,
-  ): string | null => {
-    const candidates: { code: string; date: number }[] = [];
-    if ('codes' in resp && Array.isArray(resp.codes)) candidates.push(...resp.codes);
-    if ('codeData' in resp && resp.codeData) candidates.push(resp.codeData);
-    const fresh = candidates
-      .filter((c) => typeof c.code === 'string' && c.date > sinceUnix)
-      .sort((a, b) => b.date - a.date)[0];
-    const code = fresh?.code.trim();
-    return code ? code : null;
-  };
-  for (let attempt = 0; attempt < 30; attempt++) {
-    if (signal.aborted) return null;
-    try {
-      const resp = await getClient().getTelegramLoginCode(itemId);
-      const code = pick(resp);
-      if (code) return code;
-      const err = (resp as { error?: string }).error;
-      if (err && err !== 'retry_request') {
-        log.warn(`[market] getTelegramLoginCode returned error: ${err}`);
-        return null;
-      }
-    } catch (err) {
-      log.warn('[market] getTelegramLoginCode threw', err);
-      return null;
-    }
-    await new Promise((r) => setTimeout(r, 2000));
-  }
-  return null;
-};
-
 export const fetchSteamMafile = async (itemId: number): Promise<string | null> => {
   const token = await loadToken();
   if (!token) return null;

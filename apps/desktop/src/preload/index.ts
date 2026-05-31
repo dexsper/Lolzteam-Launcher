@@ -12,6 +12,7 @@ import type {
   AuthTokenPayload,
   LauncherSettings,
   PickFileOptions,
+  ServiceId,
   SettingsResponse,
 } from '@shared-types';
 
@@ -39,7 +40,8 @@ const api = {
   },
   accounts: {
     list: () => invoke<AccountSummary[]>(IPC_CHANNELS.ACCOUNTS_LIST),
-    listStream: () => invoke<void>(IPC_CHANNELS.ACCOUNTS_LIST_STREAM),
+    listStream: (only?: ServiceId) =>
+      invoke<void>(IPC_CHANNELS.ACCOUNTS_LIST_STREAM, only ? { only } : undefined),
     onCategory: (h: (p: AccountsCategoryEvent) => void) =>
       on<AccountsCategoryEvent>(IPC_CHANNELS.ACCOUNTS_CATEGORY, h),
     refresh: () => invoke<AccountSummary[]>(IPC_CHANNELS.ACCOUNTS_REFRESH),

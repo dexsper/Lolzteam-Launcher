@@ -4,7 +4,6 @@ import type {
   EmailCodeResponse,
   RawMarketItem,
   RawOrdersResponse,
-  TelegramLoginCodeResponse,
 } from './types';
 
 export interface MarketClientOptions {
@@ -66,13 +65,6 @@ export class MarketClient {
     return this.http
       .get(`${itemId}/email-code`, { throwHttpErrors: false })
       .json<EmailCodeResponse>();
-  }
-
-  /** `Managing.TelegramCode` — fetch Telegram login confirmation code for the item. */
-  async getTelegramLoginCode(itemId: number): Promise<TelegramLoginCodeResponse> {
-    return this.http
-      .get(`${itemId}/telegram-login-code`, { throwHttpErrors: false })
-      .json<TelegramLoginCodeResponse>();
   }
 
   /** Current authenticated user (market API — no avatar URL, only `avatar_date`). */

@@ -6,6 +6,7 @@ import type { AccountSummary, ServiceId } from '@shared-types';
 import { AccountCard } from './AccountCard';
 import { SkeletonCard } from './InventorySkeleton';
 import {
+  isStreamService,
   mergeWithStream,
   startAccountsStream,
   useAccountsStream,
@@ -189,7 +190,9 @@ export const InventoryView = () => {
 
   const refresh = () => {
     if (streaming) return;
-    startAccountsStream();
+    // On a single-category tab, refresh only that category; on "all", refresh everything.
+    const only = filter !== 'all' && isStreamService(filter) ? filter : undefined;
+    startAccountsStream(only);
   };
 
   // Hard error with nothing cached to fall back on.

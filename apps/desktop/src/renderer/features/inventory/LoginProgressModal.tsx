@@ -25,9 +25,6 @@ const buildSteps = (t: TFunction): Record<LoginService, readonly StepDef[]> => (
   telegram: [
     { step: 'fetching-credentials', label: t('loginSteps.fetchingCredentials') },
     { step: 'building-tdata', label: t('loginSteps.buildingTdata') },
-    { step: 'sending-tg-code', label: t('loginSteps.sendingTgCode') },
-    { step: 'fetching-tg-code', label: t('loginSteps.fetchingTgCode') },
-    { step: 'verifying-tg-code', label: t('loginSteps.verifyingTgCode') },
     { step: 'killing-telegram', label: t('loginSteps.killingTelegram') },
     { step: 'writing-tdata', label: t('loginSteps.writingTdata') },
     { step: 'launching-telegram', label: t('loginSteps.launchingTelegram') },
@@ -102,9 +99,7 @@ export const LoginProgressModal = () => {
       ? currentIdx
       : step === 'awaiting-email-code'
         ? steps.findIndex((x) => x.step === 'fetching-email-code')
-        : step === 'awaiting-tg-code'
-          ? steps.findIndex((x) => x.step === 'fetching-tg-code')
-          : currentIdx;
+        : currentIdx;
 
   return (
     <Modal

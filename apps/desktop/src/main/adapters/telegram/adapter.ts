@@ -10,88 +10,11 @@ import type {
 import type { AccountDetails } from '@shared-types';
 import type { StringSessionData } from '@mtcute/node/utils.js';
 import { failLogin as fail } from '../_shared/fail';
-import { extractTelegramCreds, type TelegramAuthKey, type TelegramCreds } from './extract';
+import { extractTelegramCreds } from './extract';
 import { killTelegramProcesses, waitForTelegramExit } from './process';
 import { ensurePortableMarker, fileExists, getTdataDir } from './paths';
-import { acquireTelegramSession, buildOfflineSession } from './session';
+import { buildOfflineSession } from './session';
 import { mergeSessions, readExistingSessions, toSessionData, writeTdata } from './tdata';
-
-type SessionSource = StringSessionData | string;
-
-interface AcquireOutcome {
-  session: SessionSource;
-  /** "offline" = built from authKey, no network; "online" = phone+code login. */
-  via: 'offline' | 'online';
-}
-
-const tryOfflineSession = (
-  authKey: TelegramAuthKey,
-  ctx: AdapterContext,
-): AcquireOutcome | { error: string } => {
-  try {
-    const session = buildOfflineSession({
-      authKeyHex: authKey.authKeyHex,
-      dcId: authKey.dcId,
-    });
-    ctx.log.info(`[telegram] offline session built (dc=${authKey.dcId})`);
-    return { session, via: 'offline' };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    ctx.log.warn(`[telegram] offline session build failed: ${msg}`);
-    return { error: msg };
-  }
-};
-
-const acquireOnlineSession = async (
-  creds: TelegramCreds,
-  account: AccountDetails,
-  ctx: AdapterContext,
-): Promise<AcquireOutcome | { error: string }> => {
-  if (!creds.phone) {
-    return { error: 'Нет телефона для phone+code входа' };
-  }
-  if (!ctx.fetchTelegramCode) {
-    return { error: 'fetchTelegramCode не проброшен в адаптер' };
-  }
-
-  ctx.onProgress?.({ step: 'sending-tg-code' });
-  ctx.log.info(`[telegram] online login for ${creds.phone}`);
-
-  // Watermark (epoch seconds) so a rejected/stale code is never replayed: each
-  // attempt only accepts a code newer than this, then advances past it. Start
-  // one second back to tolerate clock skew on the first request.
-  let sinceUnix = Math.floor(Date.now() / 1000) - 1;
-
-  try {
-    const { sessionString } = await acquireTelegramSession({
-      phone: creds.phone,
-      password: creds.password,
-      apiId: creds.apiId,
-      apiHash: creds.apiHash,
-      abortSignal: ctx.abortSignal,
-      onCodeNeeded: async () => {
-        ctx.onProgress?.({ step: 'awaiting-tg-code' });
-        ctx.onProgress?.({ step: 'fetching-tg-code' });
-        ctx.log.info('[telegram] fetching login code from market');
-        const code = await ctx.fetchTelegramCode!(account.itemId, sinceUnix);
-        if (!code) throw new Error('Не удалось получить код с маркета');
-        sinceUnix = Math.floor(Date.now() / 1000);
-        ctx.onProgress?.({ step: 'verifying-tg-code' });
-        return code;
-      },
-    });
-    return { session: sessionString, via: 'online' };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (/PASSWORD_HASH_INVALID/i.test(msg)) {
-      return { error: 'Аккаунт защищён 2FA, но пароль неверный или отсутствует' };
-    }
-    if (/PHONE_CODE_INVALID|PHONE_CODE_EXPIRED/i.test(msg)) {
-      return { error: 'Код подтверждения неверный или просрочен' };
-    }
-    return { error: `Не удалось войти в Telegram: ${msg}` };
-  }
-};
 
 export const telegramAdapter: ServiceAdapter = {
   id: 'telegram',
@@ -133,28 +56,30 @@ export const telegramAdapter: ServiceAdapter = {
     const creds = extractTelegramCreds(account);
     if (!creds) return fail('У этого аккаунта нет данных Telegram в lzt.market');
 
-    // Primary path: phone + SMS-code via mtcute. Reliable: TDesktop reads the
-    // resulting tdata without complaints. The offline auth_key path
-    // (`tryOfflineSession`) stays in the code as a fallback for когда мы
-    // разберёмся с настоящим форматом `loginData.raw`, но сейчас выключен
-    // как primary — TDesktop не принимает собранную из него tdata.
-    let outcome: AcquireOutcome | { error: string };
-    outcome = await acquireOnlineSession(creds, account, ctx);
-    if ('error' in outcome && creds.authKey) {
-      ctx.log.warn(
-        `[telegram] online login failed (${outcome.error}); trying offline auth_key as last resort`,
-      );
-      ctx.onProgress?.({ step: 'building-tdata' });
-      const offlineAttempt = tryOfflineSession(creds.authKey, ctx);
-      if (!('error' in offlineAttempt)) outcome = offlineAttempt;
+    if (!creds.authKey) {
+      return fail('Нет данных сессии Telegram для восстановления (loginData.raw пуст или некорректен)');
     }
 
-    if ('error' in outcome) return fail(outcome.error);
+    ctx.onProgress?.({ step: 'building-tdata' });
+    let session: StringSessionData;
+    try {
+      session = buildOfflineSession({
+        authKeyHex: creds.authKey.authKeyHex,
+        dcId: creds.authKey.dcId,
+        userId: creds.userId,
+      });
+      ctx.log.info(
+        `[telegram] offline session built (dc=${creds.authKey.dcId}, userId=${creds.userId ?? 'none'})`,
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return fail(`Не удалось собрать сессию из auth_key: ${msg}`);
+    }
 
     ctx.onProgress?.({ step: 'killing-telegram' });
     ctx.log.info('[telegram] killing Telegram processes');
-    await killTelegramProcesses();
-    await waitForTelegramExit(5000);
+    await killTelegramProcesses(exe);
+    await waitForTelegramExit(exe, 5000);
 
     if (ctx.abortSignal.aborted) return fail('Вход отменён');
 
@@ -170,11 +95,11 @@ export const telegramAdapter: ServiceAdapter = {
     // stale entry for this same user, prepend the new session (it becomes active)
     // and cap the total. Falls back to a single-account write if the existing
     // tdata can't be read (passcode/corruption/version), matching old behaviour.
-    const incoming = toSessionData(outcome.session);
+    const incoming = toSessionData(session);
     const existing = await readExistingSessions(tdataDir, ctx.log);
     const merged = mergeSessions(incoming, existing);
     ctx.log.info(
-      `[telegram] writing tdata to ${tdataDir}: ${merged.length} account(s) (via ${outcome.via})`,
+      `[telegram] writing tdata to ${tdataDir}: ${merged.length} account(s) (offline)`,
     );
     // Write into a staging dir first, then swap it into place. This way a failed
     // write never destroys the existing tdata — we only rm the live folder once
