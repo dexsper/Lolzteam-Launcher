@@ -206,6 +206,13 @@ const extractSteamTags = (item: Record<string, unknown>): string[] => {
   return out;
 };
 
+const RESOLD_TAG_TITLES = new Set(['перепродан', 'resold']);
+
+const isResold = (item: RawItem): boolean =>
+  extractSteamTags(item as Record<string, unknown>).some((title) =>
+    RESOLD_TAG_TITLES.has(title.trim().toLowerCase()),
+  );
+
 // Top games by hours played. Icons resolve from parentGameId on the FE CDN.
 const extractSteamGames = (item: Record<string, unknown>, max = 6): SteamGame[] => {
   const full = item.steam_full_games;
@@ -347,7 +354,7 @@ const paginateOrders = async (
   while (hasNext && page <= 50) {
     const resp = await getClient().listOrders({ page, categoryId });
     const items = resp.items ?? [];
-    const normalized = items.map(normalizeItem);
+    const normalized = items.filter((it) => !isResold(it)).map(normalizeItem);
     out.push(...normalized);
     onPage?.(normalized, page);
     if (typeof resp.hasNextPage === 'boolean') {
