@@ -34,6 +34,7 @@ export const IPC_CHANNELS = {
   ACCOUNTS_CLEAR_CACHE: 'accounts:clear-cache',
   ACCOUNTS_GET: 'accounts:get',
   ACCOUNT_LOGIN: 'account:login',
+  ACCOUNT_LOGIN_CANCEL: 'account:login-cancel',
   ACCOUNT_LOGIN_PROGRESS: 'account:login-progress',
 
   SETTINGS_GET: 'settings:get',
@@ -43,6 +44,8 @@ export const IPC_CHANNELS = {
 
   APP_OPEN_EXTERNAL: 'app:open-external',
   APP_GET_VERSION: 'app:get-version',
+  APP_OPEN_LOGS: 'app:open-logs',
+  APP_EXPORT_LOG: 'app:export-log',
 } as const;
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
@@ -58,11 +61,14 @@ export interface IpcRequestMap {
   [IPC_CHANNELS.ACCOUNTS_CLEAR_CACHE]: void;
   [IPC_CHANNELS.ACCOUNTS_GET]: { itemId: number };
   [IPC_CHANNELS.ACCOUNT_LOGIN]: { itemId: number; method: 'native' | 'web' };
+  [IPC_CHANNELS.ACCOUNT_LOGIN_CANCEL]: { itemId: number };
   [IPC_CHANNELS.SETTINGS_GET]: void;
   [IPC_CHANNELS.SETTINGS_SET]: Partial<LauncherSettings>;
   [IPC_CHANNELS.SETTINGS_PICK_FILE]: PickFileOptions;
   [IPC_CHANNELS.APP_OPEN_EXTERNAL]: { url: string };
   [IPC_CHANNELS.APP_GET_VERSION]: void;
+  [IPC_CHANNELS.APP_OPEN_LOGS]: void;
+  [IPC_CHANNELS.APP_EXPORT_LOG]: void;
 }
 
 export interface IpcResponseMap {
@@ -76,11 +82,14 @@ export interface IpcResponseMap {
   [IPC_CHANNELS.ACCOUNTS_CLEAR_CACHE]: void;
   [IPC_CHANNELS.ACCOUNTS_GET]: AccountDetails;
   [IPC_CHANNELS.ACCOUNT_LOGIN]: { ok: boolean; message?: string };
+  [IPC_CHANNELS.ACCOUNT_LOGIN_CANCEL]: void;
   [IPC_CHANNELS.SETTINGS_GET]: SettingsResponse;
   [IPC_CHANNELS.SETTINGS_SET]: SettingsResponse;
   [IPC_CHANNELS.SETTINGS_PICK_FILE]: string | null;
   [IPC_CHANNELS.APP_OPEN_EXTERNAL]: void;
   [IPC_CHANNELS.APP_GET_VERSION]: string;
+  [IPC_CHANNELS.APP_OPEN_LOGS]: void;
+  [IPC_CHANNELS.APP_EXPORT_LOG]: { ok: boolean; path?: string };
 }
 
 export interface IpcEventMap {

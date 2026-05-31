@@ -57,6 +57,11 @@ const acquireOnlineSession = async (
   ctx.onProgress?.({ step: 'sending-tg-code' });
   ctx.log.info(`[telegram] online login for ${creds.phone}`);
 
+  // Watermark (epoch seconds) so a rejected/stale code is never replayed: each
+  // attempt only accepts a code newer than this, then advances past it. Start
+  // one second back to tolerate clock skew on the first request.
+  let sinceUnix = Math.floor(Date.now() / 1000) - 1;
+
   try {
     const { sessionString } = await acquireTelegramSession({
       phone: creds.phone,
@@ -68,8 +73,9 @@ const acquireOnlineSession = async (
         ctx.onProgress?.({ step: 'awaiting-tg-code' });
         ctx.onProgress?.({ step: 'fetching-tg-code' });
         ctx.log.info('[telegram] fetching login code from market');
-        const code = await ctx.fetchTelegramCode!(account.itemId);
+        const code = await ctx.fetchTelegramCode!(account.itemId, sinceUnix);
         if (!code) throw new Error('Не удалось получить код с маркета');
+        sinceUnix = Math.floor(Date.now() / 1000);
         ctx.onProgress?.({ step: 'verifying-tg-code' });
         return code;
       },

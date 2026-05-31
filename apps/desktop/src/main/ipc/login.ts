@@ -17,10 +17,10 @@ import {
 import { getSettings } from '../settings/settings-store';
 
 const adapterLogger: AdapterLogger = {
-  debug: (m, meta) => log.debug(m, meta),
-  info: (m, meta) => log.info(m, meta),
-  warn: (m, meta) => log.warn(m, meta),
-  error: (m, meta) => log.error(m, meta),
+  debug: (m, meta) => (meta === undefined ? log.debug(m) : log.debug(m, meta)),
+  info: (m, meta) => (meta === undefined ? log.info(m) : log.info(m, meta)),
+  warn: (m, meta) => (meta === undefined ? log.warn(m) : log.warn(m, meta)),
+  error: (m, meta) => (meta === undefined ? log.error(m) : log.error(m, meta)),
 };
 
 const broadcast = (itemId: number, event: LoginProgressEvent): void => {
@@ -43,24 +43,34 @@ const buildCtx = async (
   abortSignal,
   onProgress: (event) => broadcast(itemId, event),
   fetchEmailCode: (id) => fetchEmailCode(id, abortSignal),
-  fetchTelegramCode: (id) => fetchTelegramLoginCode(id, abortSignal),
+  fetchTelegramCode: (id, since) => fetchTelegramLoginCode(id, abortSignal, since),
   fetchSteamMafile: (id) => fetchSteamMafile(id),
   settings: await getSettings(),
 });
+
+// One in-flight login per account. Lets ACCOUNT_LOGIN_CANCEL abort a hung
+// attempt (e.g. Telegram code never arrives) instead of leaving the modal stuck.
+const activeLogins = new Map<number, AbortController>();
 
 export const registerLoginIpc = (): void => {
   ipcMain.handle(
     IPC_CHANNELS.ACCOUNT_LOGIN,
     async (_e, payload: { itemId: number; method: LoginMethod }) => {
       const { itemId, method } = payload;
+      activeLogins.get(itemId)?.abort();
       const ctl = new AbortController();
+      activeLogins.set(itemId, ctl);
       broadcast(itemId, { step: 'fetching-credentials' });
 
       const details = await getAccountDetails(itemId);
-      if (!details) return { ok: false, message: 'Не удалось получить данные аккаунта' };
+      if (!details) {
+        activeLogins.delete(itemId);
+        return { ok: false, message: 'Не удалось получить данные аккаунта' };
+      }
 
       const adapter = getAdapter(details.category);
       if (!adapter) {
+        activeLogins.delete(itemId);
         return {
           ok: false,
           message: `Сервис "${details.categoryTitle}" пока не поддерживается`,
@@ -73,12 +83,22 @@ export const registerLoginIpc = (): void => {
         if (result.ok) broadcast(itemId, { step: 'done' });
         return { ok: result.ok, message: result.message };
       } catch (err) {
+        if (ctl.signal.aborted) return { ok: false, message: 'Вход отменён' };
         log.error('[login] adapter threw', err);
         return {
           ok: false,
           message: err instanceof Error ? err.message : 'Неизвестная ошибка',
         };
+      } finally {
+        if (activeLogins.get(itemId) === ctl) activeLogins.delete(itemId);
       }
+    },
+  );
+
+  ipcMain.handle(
+    IPC_CHANNELS.ACCOUNT_LOGIN_CANCEL,
+    (_e, payload: { itemId: number }) => {
+      activeLogins.get(payload.itemId)?.abort();
     },
   );
 };

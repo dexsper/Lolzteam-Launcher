@@ -11,7 +11,9 @@
   },
   "topbar": {
     "title": "My accounts",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "loadingAccounts": "Loading your accounts",
+    "loggingIn": "Signing in"
   },
   "login": {
     "lede": "Sign in with your LZT account to access purchased accounts and log into Steam, Telegram, and other services in one click.",
@@ -42,7 +44,8 @@
   "loginModal": {
     "title": "Signing in to “{{title}}”",
     "success": "Done — {{service}} is launching.",
-    "browserService": "the account"
+    "browserService": "the account",
+    "cancel": "Stop sign-in"
   },
   "inventory": {
     "loading": "Loading your accounts…",
@@ -110,9 +113,13 @@
   "settings": {
     "heading": "Settings",
     "subheading": "Launcher options and connected services",
+    "app": {
+      "title": "Application"
+    },
     "telegram": {
       "title": "Telegram",
       "description": "Path to the portable Telegram.exe. When you sign in, the launcher writes the session next to this file and launches it already logged in.",
+      "sessionFolder": "Session folder",
       "fieldLabel": "Telegram.exe",
       "placeholderNoFile": "No file selected",
       "pickButton": "Pick a file",
@@ -123,6 +130,8 @@
     },
     "language": {
       "title": "Language",
+      "menuLabel": "App language",
+      "modalTitle": "Choose a language",
       "description": "Launcher interface language. Defaults to the system language.",
       "system": "System",
       "ru": "Русский",
@@ -136,10 +145,22 @@
     },
     "cache": {
       "title": "Account cache",
+      "menuLabel": "Clear cache",
+      "menuHint": "Clear the cache to force a fresh fetch from the market",
       "description": "Purchased accounts are cached on disk so the list loads instantly. Clear it to force a fresh fetch from lzt.market.",
       "clearButton": "Clear cache",
       "clearing": "Clearing…",
       "cleared": "Cache cleared"
+    },
+    "logs": {
+      "title": "Logs",
+      "menuLabel": "Save logs",
+      "menuHint": "Connection and app activity logs",
+      "description": "Connection and app activity logs. Save the file and send it for debugging.",
+      "exportButton": "Save log",
+      "exporting": "Saving…",
+      "exported": "Log saved",
+      "openFolder": "Open folder"
     }
   }
 }

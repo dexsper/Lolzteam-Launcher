@@ -9,6 +9,26 @@
     height: 28px;
   }
 
+  .loadingBar {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 56px;
+    user-select: none;
+    background-color: #ffffff12;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .spin {
+      animation: topbar-spin 0.9s linear infinite;
+    }
+  }
+
   .profile {
     position: relative;
     display: flex;
@@ -124,5 +144,11 @@
     &:hover {
       background: $color-surface-overlay;
     }
+  }
+}
+
+@keyframes topbar-spin {
+  to {
+    transform: rotate(360deg);
   }
 }

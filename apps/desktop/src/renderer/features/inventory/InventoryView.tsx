@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { AccountSummary, ServiceId } from '@shared-types';
 import { AccountCard } from './AccountCard';
 import { SkeletonCard } from './InventorySkeleton';
+import { useAccountsLoading } from '~/stores/accountsLoading';
 import s from './InventoryView.module.scss';
 
 const CHUNK = 24;
@@ -215,6 +216,11 @@ export const InventoryView = () => {
       : isSupportedService(filter) && !loaded.has(filter);
 
   const fullySettled = !streaming && !query.isLoading && !query.isFetching;
+
+  useEffect(() => {
+    useAccountsLoading.getState().setLoading(!fullySettled);
+    return () => useAccountsLoading.getState().setLoading(false);
+  }, [fullySettled]);
 
   useEffect(() => {
     if (!hasMore) return;

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { AlertCircle, Check, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
@@ -68,9 +69,24 @@ const statusFor = (
 
 export const LoginProgressModal = () => {
   const { t } = useTranslation();
-  const { isOpen, accountTitle, service, step, detail, error, close } = useLoginSession();
+  const { isOpen, itemId, accountTitle, service, step, detail, error, close } =
+    useLoginSession();
+
+  // Auto-dismiss shortly after a successful sign-in so the modal doesn't linger
+  // on screen (and can't be revived by a stray event or re-opened by accident).
+  const succeeded = isOpen && step === 'done' && !error;
+  useEffect(() => {
+    if (!succeeded) return;
+    const id = setTimeout(() => useLoginSession.getState().close(), 1500);
+    return () => clearTimeout(id);
+  }, [succeeded]);
 
   if (!isOpen) return null;
+
+  const cancel = () => {
+    if (itemId !== null) void window.launcher.accounts.cancelLogin(itemId);
+    close();
+  };
 
   const svc: LoginService = service ?? 'steam';
   const isDone = step === 'done' && !error;
@@ -93,8 +109,8 @@ export const LoginProgressModal = () => {
   return (
     <Modal
       title={t('loginModal.title', { title: accountTitle })}
-      closable={isFinished}
-      onClose={close}
+      closable
+      onClose={isFinished ? close : cancel}
     >
       <ol className={s.steps}>
         {steps.map((stepDef, idx) => {
@@ -137,9 +153,13 @@ export const LoginProgressModal = () => {
         </div>
       )}
 
-      {isFinished && (
+      {isFinished ? (
         <button type="button" className={s.close} onClick={close}>
           {t('common.close')}
+        </button>
+      ) : (
+        <button type="button" className={s.cancel} onClick={cancel}>
+          {t('loginModal.cancel')}
         </button>
       )}
     </Modal>

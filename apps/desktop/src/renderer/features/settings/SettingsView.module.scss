@@ -1,285 +1,148 @@
-.view {
-  display: flex;
-  flex-direction: column;
-  gap: $space-6;
-  padding: $space-6 $space-8;
-  max-width: 720px;
+.settingsContainer {
+  padding: 0 24px 24px 24px;
+
+  .settingsBlock {
+    max-width: 640px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    .settingsItem {
+      background-color: #1F1F1F;
+      border-radius: 24px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+
+      .prefix {
+        padding: 16px 20px 8px 20px;
+        color: #949494;
+        text-transform: uppercase;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .settingsMenu {
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 0 4px;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all .1s ease-in-out;
+
+        &:last-child {
+          margin-bottom: 4px;
+        }
+
+        .text {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+
+          .descriptionBlock {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+
+            .description {
+              color: #949494;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
+
+            .greenText {
+              color: #1EA360;
+              cursor: pointer;
+              flex-shrink: 0;
+
+              &:hover {
+                text-decoration: underline;
+              }
+            }
+          }
+        }
+
+        svg {
+          width: 20px;
+          height: 20px;
+          color: #949494;
+          flex-shrink: 0;
+          transition: all .1s ease-in-out;
+        }
+
+        &:hover {
+          background-color: #282828;
+
+          svg {
+            color: #d6d6d6;
+          }
+        }
+
+        &:active {
+          opacity: .72;
+        }
+      }
+    }
+
+    .toggleRow {
+      @include button-reset;
+      @include clickable;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: $space-4;
+      text-align: left;
+
+      &:focus-visible {
+        @include focus-ring;
+      }
+    }
+  }
 }
 
-.header {
+.langList {
   display: flex;
   flex-direction: column;
   gap: $space-1;
 }
 
-.heading {
-  font-size: $fs-xl;
-  font-weight: 700;
-  color: $color-text;
-  margin: 0;
-}
-
-.sub {
-  font-size: $fs-sm;
-  color: $color-text-muted;
-  margin: 0;
-}
-
-.card {
-  @include surface(1);
-  display: flex;
-  flex-direction: column;
-  gap: $space-5;
-  padding: $space-5;
-}
-
-.cardHead {
-  display: flex;
-  gap: $space-3;
-  align-items: flex-start;
-}
-
-.cardIcon {
-  width: 40px;
-  height: 40px;
-  border-radius: $radius-md;
-  background: rgba(0, 186, 120, 0.12);
-  color: $color-accent;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-}
-
-.cardHeadText {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.cardTitle {
-  font-size: $fs-base;
-  font-weight: 600;
-  color: $color-text;
-  margin: 0;
-}
-
-.cardDesc {
-  font-size: $fs-sm;
-  color: $color-text-muted;
-  margin: 0;
-  line-height: $lh-base;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: $space-2;
-}
-
-.fieldLabel {
-  font-size: $fs-xs;
-  color: $color-text-muted;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.pathRow {
-  display: flex;
-  gap: $space-2;
-  align-items: stretch;
-}
-
-.pathInput {
-  flex: 1;
-  min-width: 0;
-  padding: $space-2 $space-3;
-  border-radius: $radius-sm;
-  background: $color-surface-overlay;
-  border: 1px solid $color-border;
-  color: $color-text;
-  font-size: $fs-sm;
-  font-family: $font-mono;
-
-  &::placeholder {
-    color: $color-text-muted;
-    font-family: $font-sans;
-  }
-
-  &:focus-visible {
-    @include focus-ring;
-  }
-}
-
-.pickBtn {
-  @include button-reset;
-  @include clickable;
-  display: inline-flex;
-  align-items: center;
-  gap: $space-2;
-  padding: $space-2 $space-4;
-  border-radius: $radius-sm;
-  background: $color-accent;
-  color: #06170f;
-  font-weight: 600;
-  font-size: $fs-sm;
-  white-space: nowrap;
-  transition: filter $duration-fast $ease-out;
-
-  &:hover:not(:disabled) {
-    filter: brightness(1.08);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  &:focus-visible {
-    @include focus-ring;
-  }
-}
-
-.statusRow {
-  display: flex;
-  align-items: center;
-  gap: $space-3;
-  flex-wrap: wrap;
-}
-
-.dangerBtn {
-  @include button-reset;
-  @include clickable;
-  display: inline-flex;
-  align-items: center;
-  gap: $space-2;
-  padding: $space-2 $space-4;
-  border-radius: $radius-sm;
-  background: rgba(234, 76, 76, 0.1);
-  border: 1px solid rgba(234, 76, 76, 0.25);
-  color: $color-danger;
-  font-weight: 600;
-  font-size: $fs-sm;
-  white-space: nowrap;
-
-  &:hover:not(:disabled) {
-    background: rgba(234, 76, 76, 0.16);
-    border-color: rgba(234, 76, 76, 0.4);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  &:focus-visible {
-    @include focus-ring;
-  }
-}
-
-.statusOk {
-  display: inline-flex;
-  align-items: center;
-  gap: $space-1;
-  font-size: $fs-xs;
-  color: $color-accent;
-}
-
-.statusMuted {
-  display: inline-flex;
-  align-items: center;
-  gap: $space-1;
-  font-size: $fs-xs;
-  color: $color-text-muted;
-}
-
-.clearBtn {
-  @include button-reset;
-  @include clickable;
-  font-size: $fs-xs;
-  color: $color-text-soft;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-
-  &:hover {
-    color: $color-text;
-  }
-
-  &:focus-visible {
-    @include focus-ring;
-  }
-}
-
-.segmented {
-  display: inline-flex;
-  gap: $space-1;
-  padding: 4px;
-  border-radius: $radius-sm;
-  background: $color-surface-overlay;
-  border: 1px solid $color-border;
-  width: fit-content;
-}
-
-.segmentBtn {
-  @include button-reset;
-  @include clickable;
-  padding: $space-2 $space-4;
-  border-radius: calc(#{$radius-sm} - 2px);
-  font-size: $fs-sm;
-  font-weight: 500;
-  color: $color-text-soft;
-  background: transparent;
-  transition: color $duration-fast $ease-out, background $duration-fast $ease-out;
-
-  &:hover {
-    color: $color-text;
-  }
-
-  &:focus-visible {
-    @include focus-ring;
-  }
-}
-
-.segmentBtnActive {
-  background: $color-accent;
-  color: #06170f;
-  font-weight: 600;
-
-  &:hover {
-    color: #06170f;
-  }
-}
-
-.toggleRow {
+.langOption {
   @include button-reset;
   @include clickable;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: $space-4;
-  width: 100%;
-  text-align: left;
+  gap: $space-3;
+  padding: $space-3 $space-4;
+  border-radius: $radius-md;
+  font-size: $fs-sm;
+  color: $color-text;
+  background: #ffffff12;
+  transition: background $duration-fast $ease-out, color $duration-fast $ease-out;
+
+  &:hover {
+    background: #ffffff20;
+  }
 
   &:focus-visible {
     @include focus-ring;
   }
 }
 
-.toggleText {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.toggleLabel {
-  font-size: $fs-sm;
-  font-weight: 500;
-  color: $color-text;
-}
-
-.toggleHint {
-  font-size: $fs-xs;
-  color: $color-text-muted;
-  line-height: $lh-base;
+.langOptionActive {
+  color: $color-accent;
+  font-weight: 600;
 }
 
 .switch {

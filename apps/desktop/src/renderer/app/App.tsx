@@ -34,9 +34,13 @@ export const App = () => {
 
   useEffect(() => {
     const off = window.launcher.accounts.onLoginProgress((evt) => {
-      const { itemId } = useLoginSession.getState();
-      if (evt.itemId !== itemId) return;
-      useLoginSession.getState().setStep(evt.step, evt.detail);
+      const sess = useLoginSession.getState();
+      if (evt.itemId !== sess.itemId) return;
+      // Once a session has finished (done or errored), ignore any late progress
+      // events — otherwise a straggler would roll the step back and make the
+      // already-finished modal look like it's running again.
+      if (sess.step === 'done' || sess.error !== null) return;
+      sess.setStep(evt.step, evt.detail);
     });
     return off;
   }, []);

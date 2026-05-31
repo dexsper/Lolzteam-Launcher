@@ -3,6 +3,8 @@ import { ChevronDown, LogOut, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { AuthSession } from '@shared-types';
 import logoUrl from '~/assets/logolzt.svg';
+import { useAccountsLoading } from '~/stores/accountsLoading';
+import { useLoginSession } from '~/stores/loginSession';
 import s from './TopBar.module.scss';
 
 interface TopBarProps {
@@ -22,6 +24,16 @@ export const TopBar = ({ session }: TopBarProps) => {
   const { t, i18n } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+
+  const accountsLoading = useAccountsLoading((st) => st.loading);
+  const loggingIn = useLoginSession(
+    (st) => st.isOpen && st.step !== 'done' && st.error === null,
+  );
+  const loadingText = loggingIn
+    ? t('topbar.loggingIn')
+    : accountsLoading
+      ? t('topbar.loadingAccounts')
+      : null;
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -48,6 +60,16 @@ export const TopBar = ({ session }: TopBarProps) => {
   return (
     <header className={s.topbar}>
       <img className={s.brandLogo} src={logoUrl} aria-hidden alt="Lolzteam" />
+
+      {loadingText && (
+        <div className={s.loadingBar}>
+          <svg className={s.spin} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2V6M12 18V22M6 12H2M22 12H18M19.0784 19.0784L16.25 16.25M19.0784 4.99994L16.25 7.82837M4.92157 19.0784L7.75 16.25M4.92157 4.99994L7.75 7.82837" stroke="white" stroke-opacity="0.72" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          {loadingText}
+        </div>
+      )}
+
       {session && (
         <div className={s.profile} ref={profileRef}>
           <button

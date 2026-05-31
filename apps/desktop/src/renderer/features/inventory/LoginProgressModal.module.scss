@@ -139,3 +139,24 @@
     border-color: $color-text-muted;
   }
 }
+
+.cancel {
+  margin-top: $space-5;
+  width: 100%;
+  padding: $space-3 $space-4;
+  border: 1px solid $color-border-strong;
+  background: transparent;
+  border-radius: $radius-md;
+  color: $color-text-muted;
+  font-size: $fs-sm;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background $duration-fast $ease-out, border-color $duration-fast $ease-out,
+    color $duration-fast $ease-out;
+
+  &:hover {
+    background: $color-surface-overlay;
+    border-color: $color-danger;
+    color: $color-danger;
+  }
+}

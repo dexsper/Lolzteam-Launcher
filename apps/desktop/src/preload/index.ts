@@ -46,6 +46,8 @@ const api = {
         itemId,
         method,
       }),
+    cancelLogin: (itemId: number) =>
+      invoke<void>(IPC_CHANNELS.ACCOUNT_LOGIN_CANCEL, { itemId }),
     onLoginProgress: (h: (p: LoginProgress) => void) =>
       on<LoginProgress>(IPC_CHANNELS.ACCOUNT_LOGIN_PROGRESS, h),
   },
@@ -62,6 +64,9 @@ const api = {
     getVersion: () => invoke<string>(IPC_CHANNELS.APP_GET_VERSION),
     openExternal: (url: string) =>
       invoke<void>(IPC_CHANNELS.APP_OPEN_EXTERNAL, { url }),
+    openLogs: () => invoke<void>(IPC_CHANNELS.APP_OPEN_LOGS),
+    exportLog: () =>
+      invoke<{ ok: boolean; path?: string }>(IPC_CHANNELS.APP_EXPORT_LOG),
   },
 } as const;
 
