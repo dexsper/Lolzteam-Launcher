@@ -1,6 +1,6 @@
 import type { ServiceId } from './service-id';
 
-export type LocalePreference = 'system' | 'ru' | 'en';
+export type LocalePreference = 'ru' | 'en';
 export type Locale = 'ru' | 'en';
 
 export const PROXY_CAPABLE_SERVICES: ServiceId[] = ['telegram', 'tiktok', 'instagram', 'discord'];
@@ -41,7 +41,7 @@ export type InventorySortDir = 'asc' | 'desc';
 
 export const DEFAULT_SETTINGS: LauncherSettings = {
   telegramExePath: null,
-  locale: 'system',
+  locale: 'ru',
   steamInvisible: false,
   proxyEnabled: false,
   proxies: [],

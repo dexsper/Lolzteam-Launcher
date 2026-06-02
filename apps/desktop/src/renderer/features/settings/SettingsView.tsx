@@ -8,7 +8,7 @@ import { useUpdater } from '~/stores/updater';
 import { ProxyView } from './ProxyView';
 import s from './SettingsView.module.scss';
 
-const LOCALE_OPTIONS: readonly LocalePreference[] = ['system', 'ru', 'en'] as const;
+const LOCALE_OPTIONS: readonly LocalePreference[] = ['ru', 'en'] as const;
 
 export const SettingsView = () => {
   const { t } = useTranslation();
@@ -139,7 +139,7 @@ export const SettingsView = () => {
   const openExternal = (url: string) => () => void window.launcher.app.openExternal(url);
 
   const tgPath = settings?.telegramExePath ?? null;
-  const currentLocale: LocalePreference = settings?.locale ?? 'system';
+  const currentLocale: LocalePreference = settings?.locale ?? 'ru';
   const steamInvisible = settings?.steamInvisible ?? false;
 
   const cacheDescription = clearingCache

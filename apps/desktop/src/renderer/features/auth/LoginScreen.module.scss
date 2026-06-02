@@ -4,15 +4,32 @@
   justify-content: center;
   height: 100vh;
   position: relative;
+  overflow: hidden;
+
+  .background {
+    position: absolute;
+    inset: 0;
+    background-image: var(--login-bg);
+    background-repeat: repeat;
+    background-position: center;
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+  }
 
   .loginBlock {
-    padding: 20px;
-    background-color: #1F1F1F;
+    position: relative;
+    z-index: 1;
+    padding: 40px 20px 40px 20px;
+    background: #1A1A1A;
     border-radius: 24px;
     display: flex;
     flex-direction: column;
-    gap: 24px;
-    max-width: 400px;
+    gap: 40px;
+    max-width: 420px;
+    align-items: center;
+    text-align: center;
+    border: 1px solid #222222;
 
     .logo {
       width: 36px;
@@ -34,6 +51,12 @@
         color: #949494;
         font-size: 16px;
       }
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: $space-2;
     }
 
     .button {
@@ -66,10 +89,78 @@
         @include focus-ring;
       }
     }
+
+    .langWrap {
+      position: relative;
+    }
+
+    .langButton {
+      @include button-reset;
+      @include clickable;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 96px;
+      background: $color-surface-overlay;
+      color: $color-text;
+      transition: filter $duration-fast $ease-out, background $duration-fast $ease-out;
+
+      &:hover {
+        filter: brightness(1.2);
+      }
+
+      &:focus-visible {
+        @include focus-ring;
+      }
+    }
+
+    .langMenu {
+      position: absolute;
+      right: 0;
+      bottom: calc(100% + #{$space-2});
+      z-index: $z-toast;
+      display: flex;
+      flex-direction: column;
+      min-width: 160px;
+      padding: $space-1;
+      border-radius: $radius-md;
+      background: $color-surface;
+      border: 1px solid $color-border-strong;
+      box-shadow: $shadow-md;
+    }
+
+    .langOption {
+      @include button-reset;
+      @include clickable;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: $space-2;
+      padding: $space-2 $space-3;
+      border-radius: $radius-sm;
+      color: $color-text;
+      font-size: $fs-sm;
+      text-align: left;
+
+      &:hover {
+        background: $color-surface-overlay;
+      }
+
+      &:focus-visible {
+        @include focus-ring;
+      }
+    }
+
+    .langOptionActive {
+      color: #1EA360;
+    }
   }
 
   .version {
     position: absolute;
+    z-index: 1;
     bottom: 12px;
     left: 50%;
     transform: translateX(-50%);

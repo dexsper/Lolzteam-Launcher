@@ -17,7 +17,11 @@ class SettingsStore extends EventEmitter {
     try {
       const raw = await fs.readFile(settingsFile(), 'utf8');
       const parsed = JSON.parse(raw) as Partial<LauncherSettings>;
-      this.cached = { ...DEFAULT_SETTINGS, ...parsed };
+      const merged = { ...DEFAULT_SETTINGS, ...parsed };
+      if (merged.locale !== 'ru' && merged.locale !== 'en') {
+        merged.locale = DEFAULT_SETTINGS.locale;
+      }
+      this.cached = merged;
     } catch (err: unknown) {
       if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
         this.cached = { ...DEFAULT_SETTINGS };

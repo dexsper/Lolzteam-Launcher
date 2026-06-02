@@ -30,7 +30,9 @@
     "loggingIn": "Signing in"
   },
   "login": {
+    "title": "Authorization",
     "lede": "Sign in with your LZT account to access purchased accounts and log into Steam, Telegram, and other services in one click.",
+    "language": "Change language",
     "openInApp": "Sign in here",
     "busyInApp": "Opening…",
     "openBrowser": "Use browser",
@@ -182,8 +184,7 @@
       "title": "Language",
       "menuLabel": "App language",
       "modalTitle": "Choose a language",
-      "description": "Launcher interface language. Defaults to the system language.",
-      "system": "System",
+      "description": "Launcher interface language.",
       "ru": "Русский",
       "en": "English"
     },

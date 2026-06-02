@@ -9,6 +9,32 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.4.2',
+    date: '2026-06-02',
+    changes: {
+      ru: [
+        'Редизайн страницы входа',
+        'Добавлен переключатель языка прямо на странице входа',
+      ],
+      en: [
+        'Redesigned the login screen',
+        'Added a language switcher right on the login screen',
+      ],
+    },
+  },
+  {
+    version: '0.4.1',
+    date: '2026-06-02',
+    changes: {
+      ru: [
+        'Исправление ошибок',
+      ],
+      en: [
+        'Bug fixes',
+      ],
+    },
+  },
+  {
     version: '0.4.0',
     date: '2026-06-02',
     changes: {
