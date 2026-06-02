@@ -1,6 +1,7 @@
 import log from 'electron-log/main';
 import { app } from 'electron';
 import { MarketClient } from '@market-sdk';
+import type { RawMarketItem, RawProfileResponse } from '@market-sdk';
 import { categoryNameToServiceId } from '@shared-types';
 import type {
   AccountDetails,
@@ -27,38 +28,15 @@ const getClient = (): MarketClient => {
   return client;
 };
 
+// Bumped on every token change (login/logout). In-flight pagination captures
+// the epoch at start and bails between pages when it changes, so a stale loop
+// can't fire a request with a cleared/replaced token (→ spurious 401).
+let tokenEpoch = 0;
+
 onTokenChange(() => {
   client = null;
+  tokenEpoch += 1;
 });
-
-interface RawProfileResponse {
-  user: {
-    user_id: number;
-    username: string;
-    avatar_url?: string | null;
-    view_url?: string | null;
-    // Forum API returns balance as a string ("496910.40"); market API as a number.
-    balance?: number | string;
-    currency?: string;
-    // Market `/me` nests rendered avatars + gradient username HTML here.
-    rendered?: {
-      username?: string | null;
-      avatars?: {
-        l?: string | null;
-        m?: string | null;
-        s?: string | null;
-      };
-    };
-    // The avatar lives under `links` (forum API only), not at `avatar_url`.
-    links?: {
-      avatar?: string | null;
-      avatar_big?: string | null;
-      avatar_small?: string | null;
-      permalink?: string | null;
-    };
-    [key: string]: unknown;
-  };
-}
 
 const pickAvatarUrl = (user: RawProfileResponse['user']): string | null =>
   user.rendered?.avatars?.l ??
@@ -101,14 +79,14 @@ export const fetchProfile = async (): Promise<AuthSession | null> => {
   // Market `/me` returns rendered avatars + gradient username HTML + balance in
   // one call. Fall back to the forum `/users/me` shape if it ever lacks a user.
   try {
-    const raw = (await getClient().me()) as RawProfileResponse;
+    const raw = await getClient().me();
     if (raw?.user) return normalizeProfile(raw);
     log.warn('[market] me() returned no user; falling back to forum profile');
   } catch (err) {
     log.warn('[market] me() failed; falling back to forum profile', err);
   }
   try {
-    const raw = (await getClient().meForum()) as RawProfileResponse;
+    const raw = await getClient().meForum();
     if (!raw?.user) return null;
     return normalizeProfile(raw);
   } catch (err) {
@@ -116,29 +94,6 @@ export const fetchProfile = async (): Promise<AuthSession | null> => {
     return null;
   }
 };
-
-interface RawItem {
-  item_id: number;
-  title?: string;
-  title_en?: string;
-  description?: string;
-  price: number;
-  price_currency?: string;
-  item_image?: string;
-  item_image_url?: string;
-  warranty_end_at?: number;
-  published_date?: number;
-  item_state?: string;
-  category?: {
-    name?: string;
-    title?: string;
-    category_name?: string;
-    category_title?: string;
-  };
-  category_name?: string;
-  category_title?: string;
-  [key: string]: unknown;
-}
 
 const asNumber = (v: unknown): number | null => {
   if (typeof v === 'number' && Number.isFinite(v)) return v;
@@ -194,7 +149,7 @@ const toIsoCountry = (value: unknown): string | null => {
   return COUNTRY_NAME_TO_ISO.get(raw.toLowerCase()) ?? null;
 };
 
-const extractTags = (item: Record<string, unknown>): AccountTag[] => {
+const extractTags = (item: RawMarketItem): AccountTag[] => {
   const tags = item.tags;
   if (!tags || typeof tags !== 'object') return [];
   const out: AccountTag[] = [];
@@ -214,7 +169,7 @@ interface SteamBans {
   tradeBanned: boolean;
 }
 
-const extractSteamBans = (item: Record<string, unknown>): SteamBans => {
+const extractSteamBans = (item: RawMarketItem): SteamBans => {
   const bans = item.steam_bans;
   const obj =
     bans && typeof bans === 'object' ? (bans as Record<string, unknown>) : null;
@@ -237,13 +192,13 @@ const extractSteamBans = (item: Record<string, unknown>): SteamBans => {
 
 const RESOLD_TAG_TITLES = new Set(['перепродан', 'resold']);
 
-const isResold = (item: RawItem): boolean =>
-  extractTags(item as Record<string, unknown>).some((tag) =>
+const isResold = (item: RawMarketItem): boolean =>
+  extractTags(item).some((tag) =>
     RESOLD_TAG_TITLES.has(tag.title.trim().toLowerCase()),
   );
 
 // Top games by hours played. Icons resolve from parentGameId on the FE CDN.
-const extractSteamGames = (item: Record<string, unknown>, max = 6): SteamGame[] => {
+const extractSteamGames = (item: RawMarketItem, max = 6): SteamGame[] => {
   const full = item.steam_full_games;
   const list =
     full && typeof full === 'object'
@@ -273,7 +228,7 @@ const extractSteamGames = (item: Record<string, unknown>, max = 6): SteamGame[] 
 // a compact, display-ready subset; missing fields degrade to null/false so the
 // list endpoint (which may omit some) still renders cleanly.
 const extractSteamInfo = (
-  item: Record<string, unknown>,
+  item: RawMarketItem,
   serviceId: ServiceId | null,
 ): SteamInfo | null => {
   if (serviceId !== 'steam') return null;
@@ -296,7 +251,7 @@ const extractSteamInfo = (
 };
 
 const extractTelegramInfo = (
-  item: Record<string, unknown>,
+  item: RawMarketItem,
   serviceId: ServiceId | null,
 ): TelegramInfo | null => {
   if (serviceId !== 'telegram') return null;
@@ -320,7 +275,7 @@ const extractTelegramInfo = (
 
 // `buyer.operation_date` (when present) is when the current viewer purchased the
 // item. Fall back to null so the card can hide the line.
-const extractPurchasedAt = (item: Record<string, unknown>): number | null => {
+const extractPurchasedAt = (item: RawMarketItem): number | null => {
   const buyer = item.buyer;
   if (buyer && typeof buyer === 'object') {
     const date = asNumber((buyer as { operation_date?: unknown }).operation_date);
@@ -329,7 +284,7 @@ const extractPurchasedAt = (item: Record<string, unknown>): number | null => {
   return null;
 };
 
-const pickCategoryRaw = (item: RawItem): string => {
+const pickCategoryRaw = (item: RawMarketItem): string => {
   const cat = item.category;
   return (
     cat?.name ??
@@ -339,7 +294,7 @@ const pickCategoryRaw = (item: RawItem): string => {
   ).toString();
 };
 
-const pickCategoryTitle = (item: RawItem): string => {
+const pickCategoryTitle = (item: RawMarketItem): string => {
   const cat = item.category;
   return (
     cat?.title ??
@@ -350,7 +305,7 @@ const pickCategoryTitle = (item: RawItem): string => {
   ).toString();
 };
 
-const normalizeItem = (item: RawItem): AccountSummary => {
+const normalizeItem = (item: RawMarketItem): AccountSummary => {
   const categoryRaw = pickCategoryRaw(item);
   const category = categoryNameToServiceId(categoryRaw);
   return {
@@ -363,13 +318,13 @@ const normalizeItem = (item: RawItem): AccountSummary => {
     price: item.price ?? 0,
     currency: item.price_currency ?? 'RUB',
     imageUrl: item.item_image_url ?? item.item_image ?? null,
-    tags: extractTags(item as Record<string, unknown>),
+    tags: extractTags(item),
     warrantyEndsAt: item.warranty_end_at ?? null,
     publishedAt: item.published_date ?? null,
-    purchasedAt: extractPurchasedAt(item as Record<string, unknown>),
+    purchasedAt: extractPurchasedAt(item),
     isPurchased: item.item_state === 'paid' || item.item_state === 'closed',
-    steam: extractSteamInfo(item as Record<string, unknown>, category),
-    telegram: extractTelegramInfo(item as Record<string, unknown>, category),
+    steam: extractSteamInfo(item, category),
+    telegram: extractTelegramInfo(item, category),
   };
 };
 
@@ -380,10 +335,14 @@ const paginateOrders = async (
   categoryId?: number,
   onPage?: OnPage,
 ): Promise<AccountSummary[]> => {
+  const epoch = tokenEpoch;
   const out: AccountSummary[] = [];
   let page = 1;
   let hasNext = true;
   while (hasNext && page <= 50) {
+    // Token changed mid-stream (logout/re-login): stop before the next request
+    // so we don't hit the API with a stale token.
+    if (tokenEpoch !== epoch) break;
     const resp = await getClient().listOrders({ page, categoryId });
     const items = resp.items ?? [];
     const normalized = items.filter((it) => !isResold(it)).map(normalizeItem);
@@ -470,7 +429,7 @@ const tagsToResult = (tags: AccountTag[], reason?: string): CheckAccountResult =
 const fetchAuthoritativeTags = async (itemId: number): Promise<AccountTag[] | null> => {
   try {
     const resp = await getClient().getItem(itemId);
-    if (resp?.item) return extractTags(resp.item as Record<string, unknown>);
+    if (resp?.item) return extractTags(resp.item);
   } catch (err) {
     log.warn(`[market] checkAccount getItem(${itemId}) failed`, err);
   }
@@ -519,7 +478,7 @@ const asTrimmedString = (v: unknown): string | null =>
   typeof v === 'string' && v.trim() ? v.trim() : null;
 
 const pickLoginRaw = (
-  item: Record<string, unknown>,
+  item: RawMarketItem,
   serviceId: ServiceId | null,
 ): string | null => {
   const ld = item.loginData;
@@ -534,7 +493,7 @@ const pickLoginRaw = (
 };
 
 const pickPasswordRaw = (
-  item: Record<string, unknown>,
+  item: RawMarketItem,
   serviceId: ServiceId | null,
 ): string | null => {
   const ld = item.loginData;
@@ -550,13 +509,12 @@ const pickPasswordRaw = (
 
 export const getAccountDetails = async (itemId: number): Promise<AccountDetails | null> => {
   try {
-    const resp = (await getClient().getItem(itemId)) as { item?: RawItem & Record<string, unknown> };
+    const resp = await getClient().getItem(itemId);
     const item = resp.item;
     if (!item) return null;
     const summary = normalizeItem(item);
-    const itemAsRecord = item as Record<string, unknown>;
-    const loginRaw = pickLoginRaw(itemAsRecord, summary.category);
-    const passwordRaw = pickPasswordRaw(itemAsRecord, summary.category);
+    const loginRaw = pickLoginRaw(item, summary.category);
+    const passwordRaw = pickPasswordRaw(item, summary.category);
     log.debug(
       `[market] item #${itemId} category=${summary.categoryRaw} ` +
         `loginRaw=${loginRaw ? 'present' : 'missing'} ` +
@@ -566,7 +524,7 @@ export const getAccountDetails = async (itemId: number): Promise<AccountDetails 
       ...summary,
       loginRaw,
       passwordRaw,
-      secrets: itemAsRecord,
+      secrets: item,
     };
   } catch (err) {
     log.warn('[market] getAccountDetails failed', err);

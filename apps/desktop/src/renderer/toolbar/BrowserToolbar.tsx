@@ -56,7 +56,6 @@ const L = {
   proxyTitle: isRu ? 'Активный прокси' : 'Active proxy',
   label: isRu ? 'Название' : 'Label',
   address: isRu ? 'Адрес' : 'Address',
-  ip: isRu ? 'IP' : 'IP',
   latency: isRu ? 'Задержка' : 'Latency',
   recheck: isRu ? 'Проверить заново' : 'Re-check',
   failed: isRu ? 'Ошибка' : 'Failed',
@@ -69,7 +68,6 @@ const proxy = {
   label: params.get('label') ?? '',
   host: params.get('host') ?? '',
   port: params.get('port') ?? '',
-  ip: params.get('ip') ?? '',
   ms: params.get('ms') ?? '',
 };
 
@@ -85,7 +83,6 @@ export const BrowserToolbar = () => {
   const [editing, setEditing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [ip, setIp] = useState(proxy.ip);
   const [ms, setMs] = useState(proxy.ms);
   const [testing, setTesting] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -124,7 +121,6 @@ export const BrowserToolbar = () => {
     try {
       const res = await window.browserNav.proxyRetest();
       if (res.ok) {
-        setIp(res.ip);
         setMs(String(res.ms));
       } else {
         setFailed(true);
@@ -262,12 +258,6 @@ export const BrowserToolbar = () => {
                       {proxy.host}:{proxy.port}
                     </dd>
                   </div>
-                  {ip && (
-                    <div className={s.row}>
-                      <dt className={s.key}>{L.ip}</dt>
-                      <dd className={s.val}>{ip}</dd>
-                    </div>
-                  )}
                   <div className={s.row}>
                     <dt className={s.key}>{L.latency}</dt>
                     <dd className={s.valGroup}>

@@ -18,6 +18,18 @@
 
 Требуется [Node.js](https://nodejs.org) ≥ 20.18 и [pnpm](https://pnpm.io) 10.
 
+Если `pnpm` не установлено, установите его через npm:
+
+```bash
+npm install -g pnpm
+```
+
+или включите Corepack (если он доступен):
+
+```bash
+corepack enable pnpm
+```
+
 ```bash
 pnpm install
 pnpm dev      # запуск в режиме разработки

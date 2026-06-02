@@ -26,6 +26,7 @@ interface AccountsStreamState {
   setLoaded: (updater: (prev: ReadonlySet<StreamService>) => ReadonlySet<StreamService>) => void;
   setProgress: (progress: StreamProgress | null) => void;
   resetAccumulator: () => void;
+  reset: () => void;
 }
 
 export const useAccountsStream = create<AccountsStreamState>((set) => ({
@@ -37,6 +38,8 @@ export const useAccountsStream = create<AccountsStreamState>((set) => ({
   setLoaded: (updater) => set((s) => ({ loaded: updater(s.loaded) })),
   setProgress: (progress) => set({ progress }),
   resetAccumulator: () => set({ streamed: new Map() }),
+  reset: () =>
+    set({ streaming: false, loaded: new Set(), streamed: new Map(), progress: null }),
 }));
 
 export const mergeWithStream = (base: AccountSummary[]): AccountSummary[] => {

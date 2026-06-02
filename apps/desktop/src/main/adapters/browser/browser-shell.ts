@@ -75,7 +75,6 @@ const buildProxyQuery = (
     label: proxy.label ?? '',
     host: proxy.host,
     port: String(proxy.port),
-    ip: proxyTest?.ip ?? '',
     ms: proxyTest ? String(proxyTest.ms) : '',
   });
   return params.toString();

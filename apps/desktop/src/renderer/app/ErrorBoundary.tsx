@@ -1,3 +1,4 @@
+import log from 'electron-log';
 import { Component, type ErrorInfo, type PropsWithChildren } from 'react';
 
 interface State {

@@ -7,7 +7,7 @@ import { InventoryView } from '~/features/inventory/InventoryView';
 import { SettingsView } from '~/features/settings/SettingsView';
 import { LoginProgressModal } from '~/features/inventory/LoginProgressModal';
 import { useLoginSession } from '~/stores/loginSession';
-import { useAccountsStreamController } from '~/stores/accountsStream';
+import { useAccountsStream, useAccountsStreamController } from '~/stores/accountsStream';
 import { useView } from '~/stores/view';
 import { initSettingsStore } from '~/stores/settings';
 import { useLocaleSync } from '~/i18n/useLocaleSync';
@@ -36,6 +36,12 @@ export const App = () => {
     const off = window.launcher.auth.onStatusChanged((next) => {
       setLive(next);
       qc.setQueryData(['auth-status'], next);
+      // On logout, drop any in-flight stream state so the loading indicator
+      // doesn't stay stuck (the aborted backend stream won't emit its `done`).
+      if (!next.authenticated) {
+        useAccountsStream.getState().reset();
+        qc.setQueryData(['accounts'], []);
+      }
       qc.invalidateQueries({ queryKey: ['accounts'] });
     });
     return off;

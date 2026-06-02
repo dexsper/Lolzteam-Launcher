@@ -5,6 +5,7 @@ import type {
   EmailCodeResponse,
   RawMarketItem,
   RawOrdersResponse,
+  RawProfileResponse,
 } from './types';
 
 export interface MarketClientOptions {
@@ -52,8 +53,8 @@ export class MarketClient {
   }
 
   /** `Managing.Get` — full details for a single item (login/password/etc). */
-  async getItem(itemId: number): Promise<{ item: RawMarketItem }> {
-    return this.http.get(String(itemId)).json<{ item: RawMarketItem }>();
+  async getItem(itemId: number): Promise<{ item?: RawMarketItem }> {
+    return this.http.get(String(itemId)).json<{ item?: RawMarketItem }>();
   }
 
   /** `Managing.Steam.GetMafile` — Steam Guard mafile for the item. */
@@ -75,17 +76,17 @@ export class MarketClient {
   }
 
   /** Current authenticated user (market API — no avatar URL, only `avatar_date`). */
-  async me(): Promise<unknown> {
-    return this.http.get('me').json<unknown>();
+  async me(): Promise<RawProfileResponse> {
+    return this.http.get('me').json<RawProfileResponse>();
   }
 
   /**
    * Current authenticated user from the forum API (`/users/me`). Unlike the
    * market `me()`, this returns `links.avatar*` URLs and the account balance.
    */
-  async meForum(): Promise<unknown> {
+  async meForum(): Promise<RawProfileResponse> {
     return this.http
       .get('users/me', { prefixUrl: LOLZ_CONFIG.forumApiUrl })
-      .json<unknown>();
+      .json<RawProfileResponse>();
   }
 }

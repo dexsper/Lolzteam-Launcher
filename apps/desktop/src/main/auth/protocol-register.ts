@@ -1,3 +1,4 @@
+import log from 'electron-log/main';
 import { app } from 'electron';
 import { execFile } from 'node:child_process';
 import { promises as fs, existsSync } from 'node:fs';
@@ -36,7 +37,7 @@ const buildLinuxDesktopFile = (
 const run = (cmd: string, args: string[]) =>
   new Promise<void>((done) => {
     execFile(cmd, args, (err) => {
-      if (err) console.warn(`[lolz][protocol] ${cmd} failed:`, err.message);
+      if (err) log.warn(`[lolz][protocol] ${cmd} failed:`, err.message);
       done();
     });
   });
@@ -88,7 +89,7 @@ const writeLinuxDesktopFile = async (scheme: string) => {
     }
     if (needWrite) {
       await fs.writeFile(target, content, { mode: 0o644 });
-      console.log(`[lolz][protocol] wrote ${target}`);
+      log.info(`[lolz][protocol] wrote ${target}`);
       await run('update-desktop-database', [dirname(target)]);
       await run('xdg-mime', [
         'default',
@@ -97,6 +98,6 @@ const writeLinuxDesktopFile = async (scheme: string) => {
       ]);
     }
   } catch (err) {
-    console.warn('[lolz][protocol] failed to register linux desktop file:', err);
+    log.warn('[lolz][protocol] failed to register linux desktop file:', err);
   }
 };

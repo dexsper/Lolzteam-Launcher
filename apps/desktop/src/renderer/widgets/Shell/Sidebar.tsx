@@ -1,7 +1,6 @@
 import { Boxes, ShoppingBag, Settings, Wallet } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useView, type ViewId } from '~/stores/view';
-import { Tooltip } from '~/widgets/Tooltip/Tooltip';
 import s from './Sidebar.module.scss';
 
 interface NavItem {
@@ -30,17 +29,16 @@ export const Sidebar = () => {
         const enabled = item.view !== undefined;
         const active = enabled && view === item.view;
         return (
-          <Tooltip key={item.id} label={t(item.labelKey)} placement="top">
-            <button
-              type="button"
-              className={`${s.navItem} ${active ? s.navItemActive : ''}`}
-              disabled={!enabled}
-              onClick={enabled ? () => setView(item.view!) : undefined}
-            >
-              <Icon size={18} />
-              <span>{t(item.labelKey)}</span>
-            </button>
-          </Tooltip>
+          <button
+            key={item.id}
+            type="button"
+            className={`${s.navItem} ${active ? s.navItemActive : ''}`}
+            disabled={!enabled}
+            onClick={enabled ? () => setView(item.view!) : undefined}
+          >
+            <Icon size={18} />
+            <span>{t(item.labelKey)}</span>
+          </button>
         );
       })}
     </nav>
