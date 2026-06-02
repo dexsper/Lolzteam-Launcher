@@ -3,6 +3,10 @@
     "close": "Закрыть",
     "retry": "Повторить"
   },
+  "changelog": {
+    "title": "Что нового",
+    "current": "Текущая"
+  },
   "update": {
     "available": "Доступна новая версия {{version}}",
     "download": "Скачать",
@@ -21,6 +25,8 @@
     "title": "Мои аккаунты",
     "logout": "Выйти",
     "loadingAccounts": "Загружаем ваши аккаунты",
+    "loadingCategory": "Загружаем {{service}} · загружено {{count}}",
+    "loadingCategoryPage": "Загружаем {{service}} · страница {{page}}/{{total}} · загружено {{count}}",
     "loggingIn": "Выполняем вход"
   },
   "login": {
@@ -44,6 +50,7 @@
     "writingTdata": "Записываю сессию",
     "launchingTelegram": "Запускаю Telegram",
     "injectingCookies": "Применяю cookie-сессию",
+    "injectingToken": "Применяю токен Discord",
     "launchingBrowser": "Открываю браузер"
   },
   "loginModal": {
@@ -71,6 +78,12 @@
     },
     "filter": {
       "all": "Все"
+    },
+    "filters": {
+      "title": "Фильтры",
+      "sortLabel": "Сортировка",
+      "hideInvalid": "Не показывать невалид",
+      "reset": "Сбросить фильтры"
     },
     "card": {
       "warrantyDays_one": "{{count}} день гарантии",
@@ -140,6 +153,20 @@
         "spamBlock": "Спамблок",
         "noSpamBlock": "Без спамблока",
         "premiumUntil": "Premium до {{date}}"
+      },
+      "proxy": {
+        "selectTitle": "Выберите прокси для входа",
+        "none": "Без прокси",
+        "checking": "Проверяю прокси…",
+        "failTitle": "Прокси не работает",
+        "failBody": "Не удалось подключиться через выбранный прокси.",
+        "change": "Сменить прокси",
+        "exit": "Выход",
+        "continueNoProxy": "Продолжить без прокси",
+        "statusValid": "Валид",
+        "statusInvalid": "Невалид",
+        "statusUnchecked": "Не проверялся",
+        "ping": "{{ms}} мс"
       }
     }
   },
@@ -186,6 +213,40 @@
       "confirmBody": "Steam будет закрыт, а все сохранённые аккаунты и токены автовхода удалены с этого компьютера. В аккаунты придётся войти заново. Данные самих аккаунтов на lzt.market не затрагиваются.",
       "confirmOk": "Очистить",
       "confirmCancel": "Отмена"
+    },
+    "proxy": {
+      "menuLabel": "Прокси",
+      "menuHint": "Список HTTP-прокси и выбор при входе",
+      "back": "Назад",
+      "toggleLabel": "Использовать прокси",
+      "toggleHint": "При входе можно будет выбрать прокси из списка",
+      "servicesLabel": "Сервисы с прокси",
+      "servicesHint": "Прокси будет предлагаться только для выбранных сервисов",
+      "addTitle": "Добавить прокси",
+      "addLabel": "Добавить прокси",
+      "checkOnAdd": "Проверить на валид",
+      "bulkPlaceholder": "ip:port или ip:port:login:password - по одному в строке",
+      "listEmpty": "Список прокси пуст",
+      "testLabel": "Проверить",
+      "testing": "Проверка…",
+      "statusValid": "Валид",
+      "statusInvalid": "Невалид",
+      "ping": "{{ms}} мс",
+      "testOk": "OK · {{ip}} · {{ms}} мс",
+      "testFail": "Ошибка: {{message}}",
+      "editLabel": "Редактировать",
+      "deleteLabel": "Удалить",
+      "listCount": "Прокси: {{count}}",
+      "deleteAll": "Удалить все",
+      "deleteAllConfirmTitle": "Удалить все прокси?",
+      "deleteAllConfirmBody": "Весь список прокси будет очищен. Это действие нельзя отменить.",
+      "editTitle": "Редактировать прокси",
+      "fieldHost": "Хост",
+      "fieldPort": "Порт",
+      "fieldUser": "Логин",
+      "fieldPass": "Пароль",
+      "save": "Сохранить",
+      "cancel": "Отмена"
     },
     "cache": {
       "title": "Кеш аккаунтов",

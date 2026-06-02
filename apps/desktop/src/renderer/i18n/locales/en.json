@@ -3,6 +3,10 @@
     "close": "Close",
     "retry": "Retry"
   },
+  "changelog": {
+    "title": "What's new",
+    "current": "Current"
+  },
   "update": {
     "available": "A new version {{version}} is available",
     "download": "Download",
@@ -21,6 +25,8 @@
     "title": "My accounts",
     "logout": "Sign out",
     "loadingAccounts": "Loading your accounts",
+    "loadingCategory": "Loading {{service}} · {{count}} loaded",
+    "loadingCategoryPage": "Loading {{service}} · page {{page}}/{{total}} · {{count}} loaded",
     "loggingIn": "Signing in"
   },
   "login": {
@@ -44,6 +50,7 @@
     "writingTdata": "Writing session",
     "launchingTelegram": "Launching Telegram",
     "injectingCookies": "Applying session cookies",
+    "injectingToken": "Applying Discord token",
     "launchingBrowser": "Opening browser"
   },
   "loginModal": {
@@ -71,6 +78,12 @@
     },
     "filter": {
       "all": "All"
+    },
+    "filters": {
+      "title": "Filters",
+      "sortLabel": "Sorting",
+      "hideInvalid": "Hide invalid accounts",
+      "reset": "Reset filters"
     },
     "card": {
       "warrantyDays_one": "{{count}} day warranty",
@@ -128,6 +141,20 @@
         "spamBlock": "Spam block",
         "noSpamBlock": "No spam block",
         "premiumUntil": "Premium until {{date}}"
+      },
+      "proxy": {
+        "selectTitle": "Choose a proxy for sign-in",
+        "none": "No proxy",
+        "checking": "Checking proxy…",
+        "failTitle": "Proxy is not working",
+        "failBody": "Could not connect through the selected proxy.",
+        "change": "Change proxy",
+        "exit": "Exit",
+        "continueNoProxy": "Continue without proxy",
+        "statusValid": "Valid",
+        "statusInvalid": "Invalid",
+        "statusUnchecked": "Not checked",
+        "ping": "{{ms}} ms"
       }
     }
   },
@@ -174,6 +201,40 @@
       "confirmBody": "Steam will be closed and every saved account and auto-login token removed from this computer. You'll need to sign in again. Your accounts on lzt.market are not affected.",
       "confirmOk": "Clear",
       "confirmCancel": "Cancel"
+    },
+    "proxy": {
+      "menuLabel": "Proxy",
+      "menuHint": "HTTP proxy list and pick-on-login",
+      "back": "Back",
+      "toggleLabel": "Use proxy",
+      "toggleHint": "When signing in you'll be able to pick a proxy from the list",
+      "servicesLabel": "Services using proxy",
+      "servicesHint": "A proxy will only be offered for the selected services",
+      "addTitle": "Add proxies",
+      "addLabel": "Add proxies",
+      "checkOnAdd": "Check validity",
+      "bulkPlaceholder": "ip:port or ip:port:login:password - one per line",
+      "listEmpty": "Proxy list is empty",
+      "testLabel": "Test",
+      "testing": "Testing…",
+      "statusValid": "Valid",
+      "statusInvalid": "Invalid",
+      "ping": "{{ms}} ms",
+      "testOk": "OK · {{ip}} · {{ms}} ms",
+      "testFail": "Failed: {{message}}",
+      "editLabel": "Edit",
+      "deleteLabel": "Delete",
+      "listCount": "Proxies: {{count}}",
+      "deleteAll": "Delete all",
+      "deleteAllConfirmTitle": "Delete all proxies?",
+      "deleteAllConfirmBody": "The entire proxy list will be cleared. This action cannot be undone.",
+      "editTitle": "Edit proxy",
+      "fieldHost": "Host",
+      "fieldPort": "Port",
+      "fieldUser": "Username",
+      "fieldPass": "Password",
+      "save": "Save",
+      "cancel": "Cancel"
     },
     "cache": {
       "title": "Account cache",

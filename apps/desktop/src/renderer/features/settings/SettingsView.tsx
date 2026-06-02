@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { LauncherSettings, LocalePreference } from '@shared-types';
 import { Modal } from '~/widgets/Modal/Modal';
 import { useUpdater } from '~/stores/updater';
+import { ProxyView } from './ProxyView';
 import s from './SettingsView.module.scss';
 
 const LOCALE_OPTIONS: readonly LocalePreference[] = ['system', 'ru', 'en'] as const;
@@ -26,6 +27,7 @@ export const SettingsView = () => {
   const updateStatus = useUpdater((u) => u.status);
   const setUpdateStatus = useUpdater((u) => u.setStatus);
   const [appVersion, setAppVersion] = useState<string | null>(null);
+  const [showProxy, setShowProxy] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -182,6 +184,8 @@ export const SettingsView = () => {
     }
   })();
 
+  if (showProxy) return <ProxyView onBack={() => setShowProxy(false)} />;
+
   return (
     <>
       <div className={s.settingsContainer}>
@@ -319,6 +323,28 @@ export const SettingsView = () => {
               </div>
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path d="M2 12H22M2 12C2 17.5228 6.47715 22 12 22M2 12C2 6.47715 6.47715 2 12 2M22 12C22 17.5228 17.5228 22 12 22M22 12C22 6.47715 17.5228 2 12 2M12 2C14.5013 4.73835 15.9228 8.29203 16 12C15.9228 15.708 14.5013 19.2616 12 22M12 2C9.49872 4.73835 8.07725 8.29203 8 12C8.07725 15.708 9.49872 19.2616 12 22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+            <div
+              className={s.settingsMenu}
+              role="button"
+              tabIndex={0}
+              onClick={() => setShowProxy(true)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setShowProxy(true);
+                }
+              }}
+            >
+              <div className={s.text}>
+                <span className={s.title}>{t('settings.proxy.menuLabel')}</span>
+                <div className={s.descriptionBlock}>
+                  <span className={s.description}>{t('settings.proxy.menuHint')}</span>
+                </div>
+              </div>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             <div

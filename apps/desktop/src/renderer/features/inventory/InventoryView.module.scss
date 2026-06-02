@@ -52,11 +52,20 @@
     background: $color-accent;
     color: #06170f;
   }
+
+  .filterCount {
+    background-color: #ffffff96;
+    opacity: 1;
+  }
 }
 
 .filterCount {
   font-size: $fs-xs;
   opacity: 0.8;
+  background-color: #ffffff32;
+  padding: 0 6px;
+  border-radius: 8px;
+  font-weight: 600;
 }
 
 .filterCountSkeleton {
@@ -73,8 +82,9 @@
   display: inline-flex;
   align-items: center;
   gap: $space-2;
-  padding: $space-2 $space-3;
-  border-radius: 32px;
+  height: 38px;
+  padding: 0 $space-3;
+  border-radius: 12px;
   background: $color-surface-raised;
   border: 1px solid $color-border;
   color: $color-text-soft;
@@ -226,6 +236,157 @@
   &:focus-visible {
     @include focus-ring;
   }
+}
+
+.controlsActions {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+}
+
+.filterBtn {
+  @include button-reset;
+  @include clickable;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  height: 38px;
+  padding: 0 $space-3;
+  border-radius: 12px;
+  background: $color-surface-raised;
+  border: 1px solid $color-border;
+  color: $color-text-soft;
+  font-size: $fs-sm;
+
+  &:hover {
+    color: $color-text;
+    border-color: $color-border-strong;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.filterBtnActive {
+  color: $color-accent;
+  background-color: #00ba7824;
+  border-color: #00ba7832;
+
+  &:hover {
+    color: $color-accent;
+
+    background-color: #00ba7840;
+    border-color: #00ba7856;
+  }
+}
+
+.filterDot {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  outline: 2px solid #141414;
+  background: $color-accent;
+}
+
+.filterModal {
+  display: flex;
+  flex-direction: column;
+  gap: $space-3;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.filterGroupLabel {
+  font-size: $fs-xs;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: $color-text-muted;
+}
+
+.sortRow {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  flex-wrap: wrap;
+}
+
+.filterOption {
+  @include button-reset;
+  @include clickable;
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  width: 100%;
+  padding: $space-3;
+  border-radius: 12px;
+  background: $color-surface-overlay;
+  border: 1px solid $color-border;
+  font-size: $fs-sm;
+  color: $color-text;
+  text-align: left;
+
+  &:hover {
+    border-color: $color-border-strong;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.filterReset {
+  @include button-reset;
+  @include clickable;
+  align-self: flex-start;
+  margin-top: $space-1;
+  padding: $space-2 $space-3;
+  background-color: #ffffff20;
+  border-radius: $radius-md;
+  font-size: $fs-sm;
+  color: $color-faint-text;
+
+  &:hover:not(:disabled) {
+    color: $color-text;
+    background-color: #ffffff32;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  background: $color-surface-overlay;
+  border: 1px solid $color-border;
+  color: #06170f;
+  transition: background $duration-fast $ease-out, border-color $duration-fast $ease-out;
+}
+
+.checkboxOn {
+  background: $color-accent;
+  border-color: $color-accent;
 }
 
 .noResults {

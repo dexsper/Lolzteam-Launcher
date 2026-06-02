@@ -1,0 +1,47 @@
+.tooltip {
+  position: fixed;
+  z-index: $z-toast;
+  max-width: 260px;
+  padding: $space-2 $space-3;
+  border-radius: $radius-md;
+  background: $color-tooltip-bg;
+  border: 1px solid $color-border-strong;
+  box-shadow: $shadow-md;
+  color: $color-text;
+  font-size: $fs-sm;
+  font-weight: 500;
+  line-height: $lh-tight;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity $duration-fast $ease-out, transform $duration-fast $ease-out;
+}
+
+.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.arrow {
+  position: absolute;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  background: $color-tooltip-bg;
+  border: 1px solid $color-border-strong;
+  transform: rotate(45deg);
+}
+
+.top .arrow {
+  bottom: -5px;
+  border-top: none;
+  border-left: none;
+}
+
+.bottom .arrow {
+  top: -5px;
+  border-bottom: none;
+  border-right: none;
+}

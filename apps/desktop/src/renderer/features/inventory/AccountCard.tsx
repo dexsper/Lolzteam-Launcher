@@ -15,12 +15,24 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import type { AccountSummary, AccountTag, ServiceId, SteamInfo, TelegramInfo } from '@shared-types';
+import type {
+  AccountSummary,
+  AccountTag,
+  ProxyEntry,
+  ServiceId,
+  SteamInfo,
+  TelegramInfo,
+} from '@shared-types';
 import { useLoginSession, type LoginService } from '~/stores/loginSession';
+import { useSettings } from '~/stores/settings';
 import { Modal } from '~/widgets/Modal/Modal';
+import { Tooltip } from '~/widgets/Tooltip/Tooltip';
+import { formatAgo } from '~/lib/time';
 import steamLogo from '~/assets/category/steam.svg';
 import telegramLogo from '~/assets/category/telegram.svg';
 import tiktokLogo from '~/assets/category/tiktok.svg';
+import instagramLogo from '~/assets/category/instagram.svg';
+import discordLogo from '~/assets/category/discord.svg';
 import s from './AccountCard.module.scss';
 
 interface AccountCardProps {
@@ -31,7 +43,12 @@ const CATEGORY_LOGOS: Partial<Record<ServiceId, string>> = {
   steam: steamLogo,
   telegram: telegramLogo,
   tiktok: tiktokLogo,
+  instagram: instagramLogo,
+  discord: discordLogo,
 };
+
+const EMPTY_PROXIES: ProxyEntry[] = [];
+const EMPTY_SERVICES: ServiceId[] = [];
 
 const STEAM_ICON_BASE = 'https://nztcdn.com/steam/icon';
 
@@ -129,13 +146,14 @@ const LOGIN_SERVICE_BY_CATEGORY: Partial<Record<NonNullable<AccountSummary['cate
   telegram: 'telegram',
   tiktok: 'browser',
   instagram: 'browser',
+  discord: 'discord',
 };
 
 const toLoginService = (category: AccountSummary['category']): LoginService | null =>
   category ? LOGIN_SERVICE_BY_CATEGORY[category] ?? null : null;
 
 const loginMethodFor = (service: LoginService): 'native' | 'web' =>
-  service === 'browser' ? 'web' : 'native';
+  service === 'browser' || service === 'discord' ? 'web' : 'native';
 
 const SteamDetails = ({ steam }: { steam: SteamInfo }) => {
   const { t, i18n } = useTranslation();
@@ -205,17 +223,22 @@ const SteamDetails = ({ steam }: { steam: SteamInfo }) => {
       {steam.games.length > 0 && (
         <ul className={s.games}>
           {steam.games.map((g) => (
-            <li key={g.appId} className={s.game} title={`${g.title} · ${formatHours(g.hours, i18n.language)} ${t('inventory.card.steam.hoursShort')}`}>
-              <img
-                className={s.gameIcon}
-                src={`${STEAM_ICON_BASE}/${g.parentGameId}.webp`}
-                alt=""
-                loading="lazy"
-              />
-              <span className={s.gameHours}>
-                {formatHours(g.hours, i18n.language)} {t('inventory.card.steam.hoursShort')}
-              </span>
-            </li>
+            <Tooltip
+              key={g.appId}
+              label={`${g.title} · ${formatHours(g.hours, i18n.language)} ${t('inventory.card.steam.hoursShort')}`}
+            >
+              <li className={s.game}>
+                <img
+                  className={s.gameIcon}
+                  src={`${STEAM_ICON_BASE}/${g.parentGameId}.webp`}
+                  alt=""
+                  loading="lazy"
+                />
+                <span className={s.gameHours}>
+                  {formatHours(g.hours, i18n.language)} {t('inventory.card.steam.hoursShort')}
+                </span>
+              </li>
+            </Tooltip>
           ))}
         </ul>
       )}
@@ -318,6 +341,17 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
   const busy = inProgress && activeItemId === item.itemId;
 
   const [warnOpen, setWarnOpen] = useState(false);
+  const [proxyOpen, setProxyOpen] = useState(false);
+  const [proxyChecking, setProxyChecking] = useState(false);
+  const [proxyFailed, setProxyFailed] = useState<{ entry: ProxyEntry; message: string } | null>(null);
+  const proxyEnabled = useSettings((s) => s.settings?.proxyEnabled ?? false);
+  const proxies = useSettings((s) => s.settings?.proxies ?? EMPTY_PROXIES);
+  const proxyServices = useSettings((s) => s.settings?.proxyServices ?? EMPTY_SERVICES);
+  const proxyForThis =
+    proxyEnabled &&
+    proxies.length > 0 &&
+    item.category !== null &&
+    proxyServices.includes(item.category);
   const [menuOpen, setMenuOpen] = useState(false);
   const [checkOpen, setCheckOpen] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -361,6 +395,8 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
     );
   };
 
+  const pendingTagsRef = useRef<AccountTag[] | null>(null);
+
   const runCheck = async () => {
     setMenuOpen(false);
     if (checking) return;
@@ -368,10 +404,11 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
     setChecking(true);
     setCheckResult(null);
     setCheckError(null);
+    pendingTagsRef.current = null;
     try {
       const res = await window.launcher.accounts.check(item.itemId);
       if (res.ok) {
-        applyTags(res.tags);
+        pendingTagsRef.current = res.tags;
         setCheckResult({ valid: res.valid, reason: res.reason });
       } else {
         setCheckError(res.message);
@@ -383,7 +420,18 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
     }
   };
 
-  const runLogin = async () => {
+  const closeCheck = () => {
+    setCheckOpen(false);
+    if (pendingTagsRef.current) {
+      applyTags(pendingTagsRef.current);
+      pendingTagsRef.current = null;
+    }
+  };
+
+  const runLogin = async (
+    proxyId: string | null,
+    proxyTest?: { ip: string; ms: number } | null,
+  ) => {
     if (!service) return;
     const sess = useLoginSession.getState();
     sess.start(item.itemId, item.title, service);
@@ -391,11 +439,43 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
       const res = await window.launcher.accounts.login(
         item.itemId,
         loginMethodFor(service),
+        proxyId,
+        proxyTest,
       );
       if (!res.ok) sess.fail(res.message ?? t('inventory.card.loginFailedFallback'));
     } catch (err) {
       sess.fail(err instanceof Error ? err.message : t('inventory.card.callError'));
     }
+  };
+
+  const selectProxy = async (entry: ProxyEntry) => {
+    setProxyOpen(false);
+    setProxyChecking(true);
+    try {
+      const res = await window.launcher.proxy.test({
+        host: entry.host,
+        port: entry.port,
+        username: entry.username,
+        password: entry.password,
+      });
+      setProxyChecking(false);
+      if (res.ok) {
+        void runLogin(entry.id, { ip: res.ip, ms: res.ms });
+      } else {
+        setProxyFailed({ entry, message: res.message });
+      }
+    } catch (err) {
+      setProxyChecking(false);
+      setProxyFailed({
+        entry,
+        message: err instanceof Error ? err.message : t('inventory.card.callError'),
+      });
+    }
+  };
+
+  const proceedAfterWarn = () => {
+    if (proxyForThis) setProxyOpen(true);
+    else void runLogin(null);
   };
 
   const handleLogin = () => {
@@ -406,7 +486,7 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
       setWarnOpen(true);
       return;
     }
-    void runLogin();
+    proceedAfterWarn();
   };
 
   return (
@@ -493,12 +573,8 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
         </div>
       </div>
         <div className={s.buttonGroup}>
-          <button
-            type="button"
-            className={`${s.login} ${isInvalid ? s.loginInvalid : ''}`}
-            disabled={!canLogin || busy}
-            onClick={handleLogin}
-            title={
+          <Tooltip
+            label={
               canLogin
                 ? isInvalid
                   ? t('inventory.card.loginInvalidTooltip')
@@ -506,24 +582,32 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
                 : t('inventory.card.unsupportedTooltip')
             }
           >
-            {busy ? <Loader2 size={16} className={s.spin} /> : <LogIn size={16} />}
-            <span>{busy ? t('inventory.card.busy') : t('inventory.card.login')}</span>
-          </button>
-          <div className={s.menuWrap} ref={menuRef}>
             <button
               type="button"
-              className={s.menuAccount}
-              onClick={() => setMenuOpen((v) => !v)}
-              aria-haspopup="menu"
-              aria-expanded={menuOpen}
-              title={t('inventory.card.menuTooltip')}
+              className={`${s.login} ${isInvalid ? s.loginInvalid : ''}`}
+              disabled={!canLogin || busy}
+              onClick={handleLogin}
             >
+              {busy ? <Loader2 size={16} className={s.spin} /> : <LogIn size={16} />}
+              <span>{busy ? t('inventory.card.busy') : t('inventory.card.login')}</span>
+            </button>
+          </Tooltip>
+          <div className={s.menuWrap} ref={menuRef}>
+            <Tooltip label={t('inventory.card.menuTooltip')}>
+              <button
+                type="button"
+                className={s.menuAccount}
+                onClick={() => setMenuOpen((v) => !v)}
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+              >
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path d="M12 13C12.5523 13 13 12.5523 13 12C13 11.4477 12.5523 11 12 11C11.4477 11 11 11.4477 11 12C11 12.5523 11.4477 13 12 13Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M19 13C19.5523 13 20 12.5523 20 12C20 11.4477 19.5523 11 19 11C18.4477 11 18 11.4477 18 12C18 12.5523 18.4477 13 19 13Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M5 13C5.55228 13 6 12.5523 6 12C6 11.4477 5.55228 11 5 11C4.44772 11 4 11.4477 4 12C4 12.5523 4.44772 13 5 13Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-            </button>
+              </button>
+            </Tooltip>
             {menuOpen && (
               <div className={s.menu} role="menu">
                 <button
@@ -569,7 +653,7 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
               className={s.warnConfirm}
               onClick={() => {
                 setWarnOpen(false);
-                void runLogin();
+                proceedAfterWarn();
               }}
             >
               {t('inventory.card.warrantyWarnConfirm')}
@@ -578,10 +662,124 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
         </Modal>
       )}
 
+      {proxyOpen && (
+        <Modal
+          title={t('inventory.card.proxy.selectTitle')}
+          closable
+          onClose={() => setProxyOpen(false)}
+        >
+          <div className={s.proxyList} role="radiogroup">
+            <button
+              type="button"
+              className={s.proxyOption}
+              onClick={() => {
+                setProxyOpen(false);
+                void runLogin(null);
+              }}
+            >
+              {t('inventory.card.proxy.none')}
+            </button>
+            <div className={s.proxyScroll}>
+              {proxies.map((p) => {
+                const res = p.test;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className={s.proxyOption}
+                    onClick={() => void selectProxy(p)}
+                  >
+                    <span className={s.proxyName}>
+                      {p.label?.trim() ? p.label : `${p.host}:${p.port}`}
+                    </span>
+                    <span className={s.proxyMeta}>
+                      {res ? (
+                        <>
+                          <span className={res.ok ? s.proxyOk : s.proxyFail}>
+                            {res.ok
+                              ? t('inventory.card.proxy.statusValid')
+                              : t('inventory.card.proxy.statusInvalid')}
+                            {' '}
+                            ({formatAgo(res.checkedAt, i18n.language)})
+                          </span>
+                          {res.ok && res.ms !== undefined && (
+                            <span className={s.proxyPing}>
+                              {t('inventory.card.proxy.ping', { ms: res.ms })}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className={s.proxyUnchecked}>
+                          {t('inventory.card.proxy.statusUnchecked')}
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {proxyChecking && (
+        <Modal title={t('inventory.card.proxy.checking')} closable={false}>
+          <div className={s.checkPending}>
+            <Loader2 size={32} className={s.spin} />
+            <p className={s.checkText}>{t('inventory.card.proxy.checking')}</p>
+          </div>
+        </Modal>
+      )}
+
+      {proxyFailed && (
+        <Modal
+          title={t('inventory.card.proxy.failTitle')}
+          closable
+          onClose={() => setProxyFailed(null)}
+        >
+          <div className={s.checkBody}>
+            <div className={`${s.checkResult} ${s.checkResultWarn}`}>
+              <AlertTriangle size={32} />
+              <p className={s.checkText}>{t('inventory.card.proxy.failBody')}</p>
+              <p className={s.checkSub}>{proxyFailed.message}</p>
+            </div>
+          </div>
+          <div className={s.proxyFailActions}>
+            <button
+              type="button"
+              className={s.warnCancel}
+              onClick={() => {
+                setProxyFailed(null);
+                setProxyOpen(true);
+              }}
+            >
+              {t('inventory.card.proxy.change')}
+            </button>
+            <button
+              type="button"
+              className={s.warnCancel}
+              onClick={() => setProxyFailed(null)}
+            >
+              {t('inventory.card.proxy.exit')}
+            </button>
+            <button
+              type="button"
+              className={s.warnConfirm}
+              onClick={() => {
+                setProxyFailed(null);
+                void runLogin(null);
+              }}
+            >
+              {t('inventory.card.proxy.continueNoProxy')}
+            </button>
+          </div>
+        </Modal>
+      )}
+
       {checkOpen && (
         <Modal
           title={t('inventory.card.checkTitle')}
-          onClose={() => setCheckOpen(false)}
+          onClose={closeCheck}
         >
           <div className={s.checkBody}>
             {checking ? (
@@ -616,7 +814,7 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
             <button
               type="button"
               className={s.warnConfirm}
-              onClick={() => setCheckOpen(false)}
+              onClick={closeCheck}
             >
               {t('inventory.card.checkClose')}
             </button>

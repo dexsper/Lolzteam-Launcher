@@ -43,11 +43,11 @@
 }
 
 .navItemActive {
-  background: $color-accent;
+  background: #1EA360;
   color: #fff;
 
   &:hover:not(:disabled) {
-    background: $color-accent;
+    background: #1EA360;
     color: #fff;
   }
 }

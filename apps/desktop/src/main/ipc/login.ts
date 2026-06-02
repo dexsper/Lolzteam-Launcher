@@ -7,6 +7,7 @@ import type {
   LoginProgressEvent,
 } from '@adapter-contract';
 import { IPC_CHANNELS } from '@shared-ipc';
+import type { ServiceId } from '@shared-types';
 import { getAdapter } from '../adapters';
 import {
   fetchEmailCode,
@@ -32,19 +33,32 @@ const broadcast = (itemId: number, event: LoginProgressEvent): void => {
 const buildCtx = async (
   itemId: number,
   abortSignal: AbortSignal,
-): Promise<AdapterContext> => ({
-  log: adapterLogger,
-  paths: {
-    userData: app.getPath('userData'),
-    logs: app.getPath('logs'),
-    temp: app.getPath('temp'),
-  },
-  abortSignal,
-  onProgress: (event) => broadcast(itemId, event),
-  fetchEmailCode: (id) => fetchEmailCode(id, abortSignal),
-  fetchSteamMafile: (id) => fetchSteamMafile(id),
-  settings: await getSettings(),
-});
+  category: ServiceId | null,
+  proxyId?: string | null,
+  proxyTest?: { ip: string; ms: number } | null,
+): Promise<AdapterContext> => {
+  const settings = await getSettings();
+  const serviceAllowsProxy = category !== null && settings.proxyServices.includes(category);
+  const proxy =
+    settings.proxyEnabled && serviceAllowsProxy && proxyId
+      ? settings.proxies.find((p) => p.id === proxyId)
+      : undefined;
+  return {
+    log: adapterLogger,
+    paths: {
+      userData: app.getPath('userData'),
+      logs: app.getPath('logs'),
+      temp: app.getPath('temp'),
+    },
+    abortSignal,
+    onProgress: (event) => broadcast(itemId, event),
+    fetchEmailCode: (id) => fetchEmailCode(id, abortSignal),
+    fetchSteamMafile: (id) => fetchSteamMafile(id),
+    settings,
+    proxy,
+    proxyTest: proxy && proxyTest ? proxyTest : undefined,
+  };
+};
 
 // One in-flight login per account. Lets ACCOUNT_LOGIN_CANCEL abort a hung
 // attempt (e.g. Telegram code never arrives) instead of leaving the modal stuck.
@@ -53,8 +67,16 @@ const activeLogins = new Map<number, AbortController>();
 export const registerLoginIpc = (): void => {
   ipcMain.handle(
     IPC_CHANNELS.ACCOUNT_LOGIN,
-    async (_e, payload: { itemId: number; method: LoginMethod }) => {
-      const { itemId, method } = payload;
+    async (
+      _e,
+      payload: {
+        itemId: number;
+        method: LoginMethod;
+        proxyId?: string | null;
+        proxyTest?: { ip: string; ms: number } | null;
+      },
+    ) => {
+      const { itemId, method, proxyId, proxyTest } = payload;
       activeLogins.get(itemId)?.abort();
       const ctl = new AbortController();
       activeLogins.set(itemId, ctl);
@@ -76,7 +98,7 @@ export const registerLoginIpc = (): void => {
       }
 
       try {
-        const ctx = await buildCtx(itemId, ctl.signal);
+        const ctx = await buildCtx(itemId, ctl.signal, details.category, proxyId, proxyTest);
         const result = await adapter.login(method, details, ctx);
         if (result.ok) broadcast(itemId, { step: 'done' });
         return { ok: result.ok, message: result.message };

@@ -4,18 +4,27 @@ import { create } from 'zustand';
 import type { AccountSummary, ServiceId } from '@shared-types';
 import { useAccountsLoading } from './accountsLoading';
 
-export const STREAM_SERVICES = ['steam', 'telegram', 'tiktok'] as const satisfies readonly ServiceId[];
+export const STREAM_SERVICES = ['steam', 'telegram', 'tiktok', 'instagram', 'discord'] as const satisfies readonly ServiceId[];
 export type StreamService = (typeof STREAM_SERVICES)[number];
 
 export const isStreamService = (id: ServiceId | null): id is StreamService =>
   id !== null && (STREAM_SERVICES as readonly string[]).includes(id);
 
+export interface StreamProgress {
+  service: StreamService;
+  page: number;
+  totalPages: number | null;
+  count: number;
+}
+
 interface AccountsStreamState {
   streaming: boolean;
   loaded: ReadonlySet<StreamService>;
   streamed: Map<StreamService, AccountSummary[]>;
+  progress: StreamProgress | null;
   setStreaming: (streaming: boolean) => void;
   setLoaded: (updater: (prev: ReadonlySet<StreamService>) => ReadonlySet<StreamService>) => void;
+  setProgress: (progress: StreamProgress | null) => void;
   resetAccumulator: () => void;
 }
 
@@ -23,8 +32,10 @@ export const useAccountsStream = create<AccountsStreamState>((set) => ({
   streaming: false,
   loaded: new Set(),
   streamed: new Map(),
+  progress: null,
   setStreaming: (streaming) => set({ streaming }),
   setLoaded: (updater) => set((s) => ({ loaded: updater(s.loaded) })),
+  setProgress: (progress) => set({ progress }),
   resetAccumulator: () => set({ streamed: new Map() }),
 }));
 
@@ -40,6 +51,7 @@ export const startAccountsStream = (only?: StreamService) => {
   const st = useAccountsStream.getState();
   if (st.streaming) return;
   st.setStreaming(true);
+  st.setProgress(null);
   if (only) {
     st.setLoaded((prev) => {
       const next = new Set(prev);
@@ -64,13 +76,21 @@ export const useAccountsStreamController = () => {
       );
 
     const off = window.launcher.accounts.onCategory(
-      ({ serviceId, items, categoryDone, done }) => {
+      ({ serviceId, items, categoryDone, done, page, totalPages }) => {
         const st = useAccountsStream.getState();
         if (isStreamService(serviceId) && items.length > 0) {
           const acc = st.streamed.get(serviceId) ?? [];
           acc.push(...items);
           st.streamed.set(serviceId, acc);
           rebuild();
+        }
+        if (isStreamService(serviceId) && !categoryDone && page !== undefined) {
+          st.setProgress({
+            service: serviceId,
+            page,
+            totalPages: totalPages ?? null,
+            count: (st.streamed.get(serviceId) ?? []).length,
+          });
         }
         if (categoryDone && isStreamService(serviceId)) {
           if (!st.streamed.has(serviceId)) {
@@ -79,7 +99,10 @@ export const useAccountsStreamController = () => {
           }
           st.setLoaded((prev) => new Set(prev).add(serviceId));
         }
-        if (done) st.setStreaming(false);
+        if (done) {
+          st.setStreaming(false);
+          st.setProgress(null);
+        }
       },
     );
 

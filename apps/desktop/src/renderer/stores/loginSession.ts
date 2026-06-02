@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { LoginStep } from '@adapter-contract';
 
-export type LoginService = 'steam' | 'telegram' | 'browser';
+export type LoginService = 'steam' | 'telegram' | 'browser' | 'discord';
 
 interface LoginSessionState {
   itemId: number | null;

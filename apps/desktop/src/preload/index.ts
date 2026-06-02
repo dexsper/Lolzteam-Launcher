@@ -4,6 +4,7 @@ import {
   type AccountsCategoryEvent,
   type CheckAccountResult,
   type LoginProgress,
+  type ProxyTestResult,
   type UpdateStatus,
 } from '@shared-ipc';
 import type {
@@ -13,6 +14,7 @@ import type {
   AuthTokenPayload,
   LauncherSettings,
   PickFileOptions,
+  ProxyEntry,
   ServiceId,
   SettingsResponse,
 } from '@shared-types';
@@ -49,10 +51,17 @@ const api = {
     clearCache: () => invoke<void>(IPC_CHANNELS.ACCOUNTS_CLEAR_CACHE),
     get: (itemId: number) =>
       invoke<AccountDetails | null>(IPC_CHANNELS.ACCOUNTS_GET, { itemId }),
-    login: (itemId: number, method: 'native' | 'web' = 'native') =>
+    login: (
+      itemId: number,
+      method: 'native' | 'web' = 'native',
+      proxyId?: string | null,
+      proxyTest?: { ip: string; ms: number } | null,
+    ) =>
       invoke<{ ok: boolean; message?: string }>(IPC_CHANNELS.ACCOUNT_LOGIN, {
         itemId,
         method,
+        proxyId,
+        proxyTest,
       }),
     cancelLogin: (itemId: number) =>
       invoke<void>(IPC_CHANNELS.ACCOUNT_LOGIN_CANCEL, { itemId }),
@@ -73,6 +82,10 @@ const api = {
   steam: {
     clearSession: () =>
       invoke<{ ok: boolean; message?: string }>(IPC_CHANNELS.STEAM_CLEAR_SESSION),
+  },
+  proxy: {
+    test: (input: Pick<ProxyEntry, 'host' | 'port' | 'username' | 'password'>) =>
+      invoke<ProxyTestResult>(IPC_CHANNELS.PROXY_TEST, input),
   },
   app: {
     getVersion: () => invoke<string>(IPC_CHANNELS.APP_GET_VERSION),

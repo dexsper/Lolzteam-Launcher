@@ -1,17 +1,54 @@
+import type { ServiceId } from './service-id';
+
 export type LocalePreference = 'system' | 'ru' | 'en';
 export type Locale = 'ru' | 'en';
+
+export const PROXY_CAPABLE_SERVICES: ServiceId[] = ['telegram', 'tiktok', 'instagram', 'discord'];
+
+export interface ProxyTestResult {
+  ok: boolean;
+  ms?: number;
+  ip?: string;
+  message?: string;
+  checkedAt: number;
+}
+
+export interface ProxyEntry {
+  id: string;
+  label?: string;
+  host: string;
+  port: number;
+  username?: string;
+  password?: string;
+  test?: ProxyTestResult;
+}
 
 export interface LauncherSettings {
   telegramExePath: string | null;
   locale: LocalePreference;
   /** Sign into Steam with an invisible online status. */
   steamInvisible: boolean;
+  proxyEnabled: boolean;
+  proxies: ProxyEntry[];
+  proxyServices: ServiceId[];
+  inventoryHideInvalid: boolean;
+  inventorySortKey: InventorySortKey;
+  inventorySortDir: InventorySortDir;
 }
+
+export type InventorySortKey = 'purchased' | 'price' | 'warranty';
+export type InventorySortDir = 'asc' | 'desc';
 
 export const DEFAULT_SETTINGS: LauncherSettings = {
   telegramExePath: null,
   locale: 'system',
   steamInvisible: false,
+  proxyEnabled: false,
+  proxies: [],
+  proxyServices: [...PROXY_CAPABLE_SERVICES],
+  inventoryHideInvalid: false,
+  inventorySortKey: 'purchased',
+  inventorySortDir: 'desc',
 };
 
 export interface SettingsResponse {

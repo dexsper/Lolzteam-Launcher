@@ -9,7 +9,9 @@ import type {
 import type { AccountDetails, ServiceId } from '@shared-types';
 import { MAIN_COLORS } from '../../theme';
 import { failLogin as fail } from '../_shared/fail';
+import { applyProxyToSession, clearProxyFromSession } from '../../services/proxy';
 import { extractBrowserLogin, type InjectableCookie } from './extract';
+import { createBrowserShell } from './browser-shell';
 
 const injectCookies = async (
   partition: string,
@@ -20,6 +22,13 @@ const injectCookies = async (
   // Start from a clean slate so a stale prior session can't shadow the cookies
   // we're about to write for the just-purchased account.
   await ses.clearStorageData();
+
+  if (ctx.proxy) {
+    await applyProxyToSession(ses, ctx.proxy);
+    ctx.log.info(`[browser] routing #${partition} via proxy ${ctx.proxy.host}:${ctx.proxy.port}`);
+  } else {
+    await clearProxyFromSession(ses);
+  }
 
   for (const cookie of cookies) {
     try {
@@ -93,14 +102,16 @@ const createBrowserAdapter = (id: ServiceId, displayName: string): ServiceAdapte
     });
     win.setMenu(null);
 
-    try {
-      await win.loadURL(data.landingUrl);
-    } catch (err) {
-      // A failed navigation (offline, blocked) isn't fatal — the window is open
-      // with the session applied; the user can retry inside it.
+    const { siteView } = createBrowserShell(win, {
+      partition,
+      log: ctx.log,
+      proxy: ctx.proxy,
+      proxyTest: ctx.proxyTest,
+    });
+    siteView.webContents.loadURL(data.landingUrl).catch((err: unknown) => {
       const msg = err instanceof Error ? err.message : String(err);
       ctx.log.warn(`[browser] loadURL failed: ${msg}`);
-    }
+    });
 
     return {
       ok: true,

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, ArrowDownUp, RefreshCw, Search, X } from 'lucide-react';
+import { AlertCircle, ArrowDownUp, Check, ListFilter, RefreshCw, Search, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { AccountSummary, ServiceId } from '@shared-types';
+import type { AccountSummary, LauncherSettings, ServiceId } from '@shared-types';
 import { AccountCard } from './AccountCard';
 import { SkeletonCard } from './InventorySkeleton';
 import {
@@ -11,6 +11,8 @@ import {
   startAccountsStream,
   useAccountsStream,
 } from '~/stores/accountsStream';
+import { useSettings } from '~/stores/settings';
+import { Modal } from '~/widgets/Modal/Modal';
 import s from './InventoryView.module.scss';
 
 const CHUNK = 24;
@@ -18,7 +20,7 @@ const CHUNK = 24;
 const SKELETON_INITIAL = 8;
 const SKELETON_TAIL = 4;
 
-const SUPPORTED_SERVICES = ['steam', 'telegram', 'tiktok'] as const satisfies readonly ServiceId[];
+const SUPPORTED_SERVICES = ['steam', 'telegram', 'tiktok', 'instagram', 'discord'] as const satisfies readonly ServiceId[];
 type SupportedService = (typeof SUPPORTED_SERVICES)[number];
 const isSupportedService = (id: ServiceId | null): id is SupportedService =>
   id !== null && (SUPPORTED_SERVICES as readonly string[]).includes(id);
@@ -27,6 +29,8 @@ const SERVICE_LABELS: Record<SupportedService, string> = {
   steam: 'Steam',
   telegram: 'Telegram',
   tiktok: 'TikTok',
+  instagram: 'Instagram',
+  discord: 'Discord',
 };
 
 type Filter = ServiceId | 'all';
@@ -35,6 +39,10 @@ type SortKey = 'purchased' | 'price' | 'warranty';
 type SortDir = 'asc' | 'desc';
 
 const SORT_KEYS: readonly SortKey[] = ['purchased', 'price', 'warranty'] as const;
+
+const INVALID_TAG_ID = 2;
+const isInvalidAccount = (item: AccountSummary): boolean =>
+  item.tags.some((tag) => tag.id === INVALID_TAG_ID);
 
 const searchHaystack = (item: AccountSummary): string => {
   const parts: (string | null | undefined)[] = [
@@ -123,12 +131,35 @@ export const InventoryView = () => {
   const { t } = useTranslation();
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
-  const [sortKey, setSortKey] = useState<SortKey>('purchased');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [filterOpen, setFilterOpen] = useState(false);
   const [limit, setLimit] = useState(CHUNK);
   const streaming = useAccountsStream((st) => st.streaming);
   const loaded = useAccountsStream((st) => st.loaded);
+  const settings = useSettings((st) => st.settings);
+  const setSettings = useSettings((st) => st.set);
+  const hideInvalid = settings?.inventoryHideInvalid ?? false;
+  const sortKey = settings?.inventorySortKey ?? 'purchased';
+  const sortDir = settings?.inventorySortDir ?? 'desc';
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  const filtersActive = hideInvalid || sortKey !== 'purchased' || sortDir !== 'desc';
+
+  const persistSettings = async (patch: Partial<LauncherSettings>) => {
+    const next = await window.launcher.settings.set(patch);
+    setSettings(next.settings);
+  };
+
+  const setSortKey = (key: SortKey) => void persistSettings({ inventorySortKey: key });
+  const setSortDir = (dir: SortDir) => void persistSettings({ inventorySortDir: dir });
+  const toggleHideInvalid = () =>
+    void persistSettings({ inventoryHideInvalid: !hideInvalid });
+
+  const resetFilters = () =>
+    void persistSettings({
+      inventoryHideInvalid: false,
+      inventorySortKey: 'purchased',
+      inventorySortDir: 'desc',
+    });
 
   const query = useQuery({
     queryKey: ['accounts'],
@@ -151,15 +182,16 @@ export const InventoryView = () => {
     const filtered = items.filter(
       (it) =>
         (filter === 'all' || it.category === filter) &&
+        (!hideInvalid || !isInvalidAccount(it)) &&
         matchesQuery(it, trimmedSearch),
     );
     return [...filtered].sort((a, b) => compareItems(a, b, sortKey, sortDir));
-  }, [items, filter, trimmedSearch, sortKey, sortDir]);
+  }, [items, filter, hideInvalid, trimmedSearch, sortKey, sortDir]);
 
   useEffect(() => {
     setLimit(CHUNK);
     document.querySelector('[data-scroll-root]')?.scrollTo({ top: 0 });
-  }, [filter, trimmedSearch, sortKey, sortDir]);
+  }, [filter, hideInvalid, trimmedSearch, sortKey, sortDir]);
 
   const shown = visible.slice(0, limit);
   const hasMore = limit < visible.length;
@@ -262,15 +294,6 @@ export const InventoryView = () => {
             </button>
           ))}
         </div>
-        <button
-          type="button"
-          className={s.refresh}
-          onClick={refresh}
-          disabled={streaming}
-        >
-          <RefreshCw size={14} className={streaming ? s.spin : ''} />
-          <span>{t('inventory.refresh')}</span>
-        </button>
       </div>
 
       <div className={s.controls}>
@@ -295,30 +318,81 @@ export const InventoryView = () => {
           )}
         </div>
 
-        <div className={s.sort}>
-          <div className={s.sortKeys}>
-            {SORT_KEYS.map((key) => (
-              <button
-                key={key}
-                type="button"
-                className={`${s.sortBtn} ${sortKey === key ? s.sortBtnActive : ''}`}
-                onClick={() => setSortKey(key)}
-              >
-                {t(`inventory.sort.${key}`)}
-              </button>
-            ))}
-          </div>
+        <div className={s.controlsActions}>
           <button
             type="button"
-            className={s.sortDir}
-            onClick={() => setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
-            title={t(sortDir === 'asc' ? 'inventory.sort.asc' : 'inventory.sort.desc')}
+            className={s.refresh}
+            onClick={refresh}
+            disabled={streaming}
           >
-            <ArrowDownUp size={14} />
-            <span>{t(sortDir === 'asc' ? 'inventory.sort.asc' : 'inventory.sort.desc')}</span>
+            <RefreshCw size={14} className={streaming ? s.spin : ''} />
+            <span>{t('inventory.refresh')}</span>
+          </button>
+          <button
+            type="button"
+            className={`${s.filterBtn} ${filtersActive ? s.filterBtnActive : ''}`}
+            onClick={() => setFilterOpen(true)}
+            aria-haspopup="dialog"
+          >
+            <ListFilter size={15} />
+            <span>{t('inventory.filters.title')}</span>
+            {filtersActive && <span className={s.filterDot} aria-hidden />}
           </button>
         </div>
       </div>
+
+      {filterOpen && (
+        <Modal title={t('inventory.filters.title')} onClose={() => setFilterOpen(false)}>
+          <div className={s.filterModal}>
+            <div className={s.filterGroup}>
+              <span className={s.filterGroupLabel}>{t('inventory.filters.sortLabel')}</span>
+              <div className={s.sortRow}>
+                <div className={s.sortKeys}>
+                  {SORT_KEYS.map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      className={`${s.sortBtn} ${sortKey === key ? s.sortBtnActive : ''}`}
+                      onClick={() => setSortKey(key)}
+                    >
+                      {t(`inventory.sort.${key}`)}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className={s.sortDir}
+                  onClick={() => setSortDir(sortDir === 'asc' ? 'desc' : 'asc')}
+                >
+                  <ArrowDownUp size={14} />
+                  <span>{t(sortDir === 'asc' ? 'inventory.sort.asc' : 'inventory.sort.desc')}</span>
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={hideInvalid}
+              className={s.filterOption}
+              onClick={() => void toggleHideInvalid()}
+            >
+              <span className={`${s.checkbox} ${hideInvalid ? s.checkboxOn : ''}`}>
+                {hideInvalid && <Check size={12} />}
+              </span>
+              <span>{t('inventory.filters.hideInvalid')}</span>
+            </button>
+            <button
+              type="button"
+              className={s.filterReset}
+              onClick={() => void resetFilters()}
+              disabled={!filtersActive}
+            >
+              {t('inventory.filters.reset')}
+            </button>
+          </div>
+        </Modal>
+      )}
 
       {visible.length === 0 && activeLoading ? (
         <div className={s.grid}>

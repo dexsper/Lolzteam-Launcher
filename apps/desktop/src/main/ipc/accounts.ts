@@ -15,7 +15,7 @@ import { onTokenChange } from '../auth/token-store';
 import { SERVICE_CATEGORY_ID } from '@shared-types';
 import type { AccountSummary, ServiceId } from '@shared-types';
 
-const STREAM_ORDER: readonly ServiceId[] = ['steam', 'telegram', 'tiktok'] as const;
+const STREAM_ORDER: readonly ServiceId[] = ['steam', 'telegram', 'tiktok', 'instagram', 'discord'] as const;
 
 let inflight: Promise<AccountSummary[]> | null = null;
 
@@ -54,16 +54,34 @@ const streamCategories = async (
   // When a single category is requested, stream only it and replace just its
   // slice of the cache. Otherwise stream the full fixed order and overwrite.
   const target =
-    only !== undefined && SERVICE_CATEGORY_ID[only] !== undefined ? only : undefined;
+    only !== undefined && STREAM_ORDER.includes(only) ? only : undefined;
   const order: readonly ServiceId[] = target ? [target] : STREAM_ORDER;
   const all: AccountSummary[] = [];
+  let unfiltered: AccountSummary[] | null = null;
+  const getUnfiltered = async (): Promise<AccountSummary[]> => {
+    if (unfiltered === null) unfiltered = await listPurchasedAccounts();
+    return unfiltered;
+  };
   try {
     for (const serviceId of order) {
       const categoryId = SERVICE_CATEGORY_ID[serviceId];
-      if (categoryId === undefined) continue;
-      await listAccountsByCategory(categoryId, (pageItems) => {
+      if (categoryId === undefined) {
+        const items = (await getUnfiltered()).filter((it) => it.category === serviceId);
+        all.push(...items);
+        if (items.length > 0) send({ serviceId, items, categoryDone: false, done: false });
+        send({ serviceId, items: [], categoryDone: true, done: false });
+        continue;
+      }
+      await listAccountsByCategory(categoryId, (pageItems, progress) => {
         all.push(...pageItems);
-        send({ serviceId, items: pageItems, categoryDone: false, done: false });
+        send({
+          serviceId,
+          items: pageItems,
+          categoryDone: false,
+          done: false,
+          page: progress.page,
+          totalPages: progress.totalPages,
+        });
       });
       send({ serviceId, items: [], categoryDone: true, done: false });
     }

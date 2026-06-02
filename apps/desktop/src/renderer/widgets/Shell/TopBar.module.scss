@@ -5,9 +5,40 @@
   justify-content: space-between;
   padding: 16px 24px;
 
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
   .brandLogo {
     width: 28px;
     height: 28px;
+    user-select: none;
+  }
+
+  .versionPill {
+    @include button-reset;
+    @include clickable;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    color: $color-text-muted;
+    padding: 4px 8px;
+    border-radius: $radius-pill;
+    background: $color-surface-overlay;
+    border: 1px solid $color-border;
+    transition: color 120ms ease, background 120ms ease, border-color 120ms ease;
+
+    &:hover {
+      color: $color-text;
+      background: $color-surface-raised;
+      border-color: $color-border-strong;
+    }
+
+    &:focus-visible {
+      @include focus-ring;
+    }
   }
 
   .loadingBar {
@@ -52,7 +83,7 @@
     transition: background 120ms ease;
 
     &:hover {
-      background: $color-surface-overlay;
+      background-color: #1F1F1F;
     }
   }
 

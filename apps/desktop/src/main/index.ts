@@ -11,6 +11,8 @@ import { registerAccountsIpc } from './ipc/accounts';
 import { registerLoginIpc } from './ipc/login';
 import { registerSettingsIpc } from './ipc/settings';
 import { registerSteamIpc } from './ipc/steam';
+import { registerProxyIpc } from './ipc/proxy';
+import { registerProxyAuthHandler } from './services/proxy';
 import { registerUpdaterIpc } from './updater';
 import { LOLZ_CONFIG } from '@shared-ipc';
 
@@ -63,6 +65,8 @@ app.whenReady().then(async () => {
   registerLoginIpc();
   registerSettingsIpc();
   registerSteamIpc();
+  registerProxyIpc();
+  registerProxyAuthHandler();
   registerUpdaterIpc();
 
   consumeDeepLinks(process.argv);

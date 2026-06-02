@@ -1,15 +1,27 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, LogOut, User } from 'lucide-react';
+import { ChevronDown, LogOut, Settings, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { AuthSession } from '@shared-types';
 import logoUrl from '~/assets/logolzt.svg';
 import { useAccountsLoading } from '~/stores/accountsLoading';
+import { useAccountsStream, type StreamService } from '~/stores/accountsStream';
 import { useLoginSession } from '~/stores/loginSession';
+import { useView } from '~/stores/view';
+import { ChangelogModal } from '~/widgets/Changelog/ChangelogModal';
+import { Tooltip } from '~/widgets/Tooltip/Tooltip';
 import s from './TopBar.module.scss';
 
 interface TopBarProps {
   session: AuthSession | null;
 }
+
+const SERVICE_LABELS: Record<StreamService, string> = {
+  steam: 'Steam',
+  telegram: 'Telegram',
+  tiktok: 'TikTok',
+  instagram: 'Instagram',
+  discord: 'Discord',
+};
 
 const formatBalance = (balance: number | null, currency: string | null, locale: string) => {
   if (balance === null) return null;
@@ -23,17 +35,40 @@ const formatBalance = (balance: number | null, currency: string | null, locale: 
 export const TopBar = ({ session }: TopBarProps) => {
   const { t, i18n } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [version, setVersion] = useState('');
+  const [changelogOpen, setChangelogOpen] = useState(false);
+  const setView = useView((st) => st.setView);
   const profileRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    window.launcher.app.getVersion().then(setVersion);
+  }, []);
+
   const accountsLoading = useAccountsLoading((st) => st.loading);
+  const progress = useAccountsStream((st) => st.progress);
   const loggingIn = useLoginSession(
     (st) => st.isOpen && st.step !== 'done' && st.error === null,
   );
-  const loadingText = loggingIn
-    ? t('topbar.loggingIn')
-    : accountsLoading
-      ? t('topbar.loadingAccounts')
-      : null;
+
+  let loadingText: string | null = null;
+  if (loggingIn) {
+    loadingText = t('topbar.loggingIn');
+  } else if (accountsLoading) {
+    if (progress) {
+      const label = SERVICE_LABELS[progress.service];
+      loadingText =
+        progress.totalPages && progress.totalPages > 1
+          ? t('topbar.loadingCategoryPage', {
+              service: label,
+              page: progress.page,
+              total: progress.totalPages,
+              count: progress.count,
+            })
+          : t('topbar.loadingCategory', { service: label, count: progress.count });
+    } else {
+      loadingText = t('topbar.loadingAccounts');
+    }
+  }
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -59,7 +94,20 @@ export const TopBar = ({ session }: TopBarProps) => {
 
   return (
     <header className={s.topbar}>
-      <img className={s.brandLogo} src={logoUrl} aria-hidden alt="Lolzteam" />
+      <div className={s.brand}>
+        <img className={s.brandLogo} src={logoUrl} aria-hidden alt="Lolzteam" />
+        {version && (
+          <Tooltip label={t('changelog.title')} placement="bottom">
+            <button
+              type="button"
+              className={s.versionPill}
+              onClick={() => setChangelogOpen(true)}
+            >
+              v{version}
+            </button>
+          </Tooltip>
+        )}
+      </div>
 
       {loadingText && (
         <div className={s.loadingBar}>
@@ -111,6 +159,18 @@ export const TopBar = ({ session }: TopBarProps) => {
                 role="menuitem"
                 onClick={() => {
                   setMenuOpen(false);
+                  setView('settings');
+                }}
+              >
+                <Settings size={16} />
+                <span>{t('sidebar.settings')}</span>
+              </button>
+              <button
+                type="button"
+                className={s.menuItem}
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false);
                   window.launcher.auth.logout();
                 }}
               >
@@ -120,6 +180,10 @@ export const TopBar = ({ session }: TopBarProps) => {
             </div>
           )}
         </div>
+      )}
+
+      {changelogOpen && (
+        <ChangelogModal currentVersion={version} onClose={() => setChangelogOpen(false)} />
       )}
     </header>
   );

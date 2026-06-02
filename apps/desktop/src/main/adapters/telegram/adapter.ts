@@ -14,6 +14,7 @@ import { extractTelegramCreds } from './extract';
 import { killTelegramProcesses, waitForTelegramExit } from './process';
 import { ensurePortableMarker, fileExists, getTdataDir } from './paths';
 import { buildOfflineSession } from './session';
+import { writeProxySettings } from './settings-tdf';
 import { mergeSessions, readExistingSessions, toSessionData, writeTdata } from './tdata';
 
 export const telegramAdapter: ServiceAdapter = {
@@ -114,6 +115,18 @@ export const telegramAdapter: ServiceAdapter = {
       await rm(stagingDir, { recursive: true, force: true }).catch(() => {});
       const msg = err instanceof Error ? err.message : String(err);
       return fail(`Не удалось записать сессию tdata: ${msg}`);
+    }
+
+    if (ctx.proxy) {
+      try {
+        await writeProxySettings(tdataDir, ctx.proxy);
+        ctx.log.info(
+          `[telegram] proxy settings written: ${ctx.proxy.host}:${ctx.proxy.port}`,
+        );
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        ctx.log.warn(`[telegram] failed to write proxy settings (continuing direct): ${msg}`);
+      }
     }
 
     // Without `tportable.tdat` next to the exe, Telegram Desktop reads

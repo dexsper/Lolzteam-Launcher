@@ -34,6 +34,11 @@ const buildSteps = (t: TFunction): Record<LoginService, readonly StepDef[]> => (
     { step: 'injecting-cookies', label: t('loginSteps.injectingCookies') },
     { step: 'launching-browser', label: t('loginSteps.launchingBrowser') },
   ],
+  discord: [
+    { step: 'fetching-credentials', label: t('loginSteps.fetchingCredentials') },
+    { step: 'injecting-token', label: t('loginSteps.injectingToken') },
+    { step: 'launching-browser', label: t('loginSteps.launchingBrowser') },
+  ],
 });
 
 const visibleSteps = (
@@ -143,7 +148,13 @@ export const LoginProgressModal = () => {
         <div className={s.success}>
           {t('loginModal.success', {
             service:
-              svc === 'telegram' ? 'Telegram' : svc === 'browser' ? t('loginModal.browserService') : 'Steam',
+              svc === 'telegram'
+                ? 'Telegram'
+                : svc === 'discord'
+                  ? 'Discord'
+                  : svc === 'browser'
+                    ? t('loginModal.browserService')
+                    : 'Steam',
           })}
         </div>
       )}

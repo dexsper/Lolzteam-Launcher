@@ -49,6 +49,7 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve('src/preload/index.ts'),
+          toolbar: resolve('src/preload/toolbar.ts'),
         },
         output: {
           format: 'cjs',
@@ -86,6 +87,7 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve('src/renderer/index.html'),
+          toolbar: resolve('src/renderer/toolbar/index.html'),
         },
       },
     },

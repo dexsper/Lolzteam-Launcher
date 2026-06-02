@@ -9,8 +9,11 @@ import { LoginProgressModal } from '~/features/inventory/LoginProgressModal';
 import { useLoginSession } from '~/stores/loginSession';
 import { useAccountsStreamController } from '~/stores/accountsStream';
 import { useView } from '~/stores/view';
+import { initSettingsStore } from '~/stores/settings';
 import { useLocaleSync } from '~/i18n/useLocaleSync';
 import { Splash } from '~/widgets/Splash/Splash';
+
+initSettingsStore();
 
 const AccountsStreamController = () => {
   useAccountsStreamController();

@@ -42,4 +42,6 @@ export const SERVICE_CATEGORY_ID: Partial<Record<ServiceId, number>> = {
   steam: 1,
   telegram: 24,
   tiktok: 20,
+  instagram: 10,
+  discord: 22,
 };

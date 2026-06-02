@@ -3,12 +3,14 @@ import type { ServiceId } from '@shared-types';
 import { steamAdapter } from './steam/adapter';
 import { telegramAdapter } from './telegram/adapter';
 import { instagramAdapter, tiktokAdapter } from './browser/adapter';
+import { discordAdapter } from './discord/adapter';
 
 const REGISTRY: Partial<Record<ServiceId, ServiceAdapter>> = {
   steam: steamAdapter,
   telegram: telegramAdapter,
   tiktok: tiktokAdapter,
   instagram: instagramAdapter,
+  discord: discordAdapter,
 };
 
 export const getAdapter = (id: ServiceId | null): ServiceAdapter | null =>

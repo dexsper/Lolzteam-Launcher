@@ -373,7 +373,8 @@ const normalizeItem = (item: RawItem): AccountSummary => {
   };
 };
 
-type OnPage = (items: AccountSummary[], page: number) => void;
+type PageProgress = { page: number; totalPages: number | null };
+type OnPage = (items: AccountSummary[], progress: PageProgress) => void;
 
 const paginateOrders = async (
   categoryId?: number,
@@ -387,11 +388,13 @@ const paginateOrders = async (
     const items = resp.items ?? [];
     const normalized = items.filter((it) => !isResold(it)).map(normalizeItem);
     out.push(...normalized);
-    onPage?.(normalized, page);
+    const perPage = resp.perPage || items.length;
+    const totalPages =
+      perPage > 0 && resp.totalItems > 0 ? Math.ceil(resp.totalItems / perPage) : null;
+    onPage?.(normalized, { page, totalPages });
     if (typeof resp.hasNextPage === 'boolean') {
       hasNext = resp.hasNextPage;
     } else {
-      const perPage = resp.perPage || items.length;
       hasNext = items.length > 0 && perPage > 0 && page * perPage < resp.totalItems;
     }
     page += 1;

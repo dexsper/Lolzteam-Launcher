@@ -7,6 +7,7 @@ import type {
   AuthTokenPayload,
   LauncherSettings,
   PickFileOptions,
+  ProxyEntry,
   ServiceId,
   SettingsResponse,
 } from '@lolzteam/shared-types';
@@ -18,11 +19,30 @@ export interface AccountsCategoryEvent {
   items: AccountSummary[];
   categoryDone: boolean;
   done: boolean;
+  page?: number;
+  totalPages?: number | null;
 }
 
 export type CheckAccountResult =
   | { ok: true; valid: boolean; tags: AccountTag[]; reason?: string }
   | { ok: false; message: string };
+
+export type ProxyTestResult =
+  | { ok: true; ms: number; ip: string }
+  | { ok: false; message: string };
+
+export interface ProxyTestInfo {
+  ip: string;
+  ms: number;
+}
+
+export interface BrowserNavState {
+  url: string;
+  canGoBack: boolean;
+  canGoForward: boolean;
+  isLoading: boolean;
+  title: string;
+}
 
 export type UpdateStatus =
   | { state: 'checking' }
@@ -58,6 +78,20 @@ export const IPC_CHANNELS = {
 
   STEAM_CLEAR_SESSION: 'steam:clear-session',
 
+  PROXY_TEST: 'proxy:test',
+
+  BROWSER_NAV_BACK: 'browser-nav:back',
+  BROWSER_NAV_FORWARD: 'browser-nav:forward',
+  BROWSER_NAV_RELOAD: 'browser-nav:reload',
+  BROWSER_NAV_STOP: 'browser-nav:stop',
+  BROWSER_NAV_GO: 'browser-nav:go',
+  BROWSER_NAV_COPY_URL: 'browser-nav:copy-url',
+  BROWSER_NAV_OPEN_EXTERNAL: 'browser-nav:open-external',
+  BROWSER_NAV_EXPAND: 'browser-nav:expand',
+  BROWSER_NAV_COLLAPSE: 'browser-nav:collapse',
+  BROWSER_NAV_PROXY_RETEST: 'browser-nav:proxy-retest',
+  BROWSER_NAV_STATE: 'browser-nav:state',
+
   APP_OPEN_EXTERNAL: 'app:open-external',
   APP_GET_VERSION: 'app:get-version',
   APP_OPEN_LOGS: 'app:open-logs',
@@ -81,13 +115,32 @@ export interface IpcRequestMap {
   [IPC_CHANNELS.ACCOUNTS_REFRESH]: void;
   [IPC_CHANNELS.ACCOUNTS_CLEAR_CACHE]: void;
   [IPC_CHANNELS.ACCOUNTS_GET]: { itemId: number };
-  [IPC_CHANNELS.ACCOUNT_LOGIN]: { itemId: number; method: 'native' | 'web' };
+  [IPC_CHANNELS.ACCOUNT_LOGIN]: {
+    itemId: number;
+    method: 'native' | 'web';
+    proxyId?: string | null;
+    proxyTest?: ProxyTestInfo | null;
+  };
   [IPC_CHANNELS.ACCOUNT_LOGIN_CANCEL]: { itemId: number };
   [IPC_CHANNELS.ACCOUNT_CHECK]: { itemId: number };
   [IPC_CHANNELS.SETTINGS_GET]: void;
   [IPC_CHANNELS.SETTINGS_SET]: Partial<LauncherSettings>;
   [IPC_CHANNELS.SETTINGS_PICK_FILE]: PickFileOptions;
   [IPC_CHANNELS.STEAM_CLEAR_SESSION]: void;
+  [IPC_CHANNELS.PROXY_TEST]: Pick<
+    ProxyEntry,
+    'host' | 'port' | 'username' | 'password'
+  >;
+  [IPC_CHANNELS.BROWSER_NAV_BACK]: void;
+  [IPC_CHANNELS.BROWSER_NAV_FORWARD]: void;
+  [IPC_CHANNELS.BROWSER_NAV_RELOAD]: void;
+  [IPC_CHANNELS.BROWSER_NAV_STOP]: void;
+  [IPC_CHANNELS.BROWSER_NAV_GO]: string;
+  [IPC_CHANNELS.BROWSER_NAV_COPY_URL]: void;
+  [IPC_CHANNELS.BROWSER_NAV_OPEN_EXTERNAL]: void;
+  [IPC_CHANNELS.BROWSER_NAV_EXPAND]: void;
+  [IPC_CHANNELS.BROWSER_NAV_COLLAPSE]: void;
+  [IPC_CHANNELS.BROWSER_NAV_PROXY_RETEST]: void;
   [IPC_CHANNELS.APP_OPEN_EXTERNAL]: { url: string };
   [IPC_CHANNELS.APP_GET_VERSION]: void;
   [IPC_CHANNELS.APP_OPEN_LOGS]: void;
@@ -114,6 +167,17 @@ export interface IpcResponseMap {
   [IPC_CHANNELS.SETTINGS_SET]: SettingsResponse;
   [IPC_CHANNELS.SETTINGS_PICK_FILE]: string | null;
   [IPC_CHANNELS.STEAM_CLEAR_SESSION]: { ok: boolean; message?: string };
+  [IPC_CHANNELS.PROXY_TEST]: ProxyTestResult;
+  [IPC_CHANNELS.BROWSER_NAV_BACK]: void;
+  [IPC_CHANNELS.BROWSER_NAV_FORWARD]: void;
+  [IPC_CHANNELS.BROWSER_NAV_RELOAD]: void;
+  [IPC_CHANNELS.BROWSER_NAV_STOP]: void;
+  [IPC_CHANNELS.BROWSER_NAV_GO]: void;
+  [IPC_CHANNELS.BROWSER_NAV_COPY_URL]: void;
+  [IPC_CHANNELS.BROWSER_NAV_OPEN_EXTERNAL]: void;
+  [IPC_CHANNELS.BROWSER_NAV_EXPAND]: void;
+  [IPC_CHANNELS.BROWSER_NAV_COLLAPSE]: void;
+  [IPC_CHANNELS.BROWSER_NAV_PROXY_RETEST]: ProxyTestResult;
   [IPC_CHANNELS.APP_OPEN_EXTERNAL]: void;
   [IPC_CHANNELS.APP_GET_VERSION]: string;
   [IPC_CHANNELS.APP_OPEN_LOGS]: void;
@@ -130,6 +194,7 @@ export interface IpcEventMap {
   [IPC_CHANNELS.ACCOUNTS_CATEGORY]: AccountsCategoryEvent;
   [IPC_CHANNELS.SETTINGS_CHANGED]: SettingsResponse;
   [IPC_CHANNELS.UPDATE_STATUS]: UpdateStatus;
+  [IPC_CHANNELS.BROWSER_NAV_STATE]: BrowserNavState;
 }
 
 export type { AuthTokenPayload };

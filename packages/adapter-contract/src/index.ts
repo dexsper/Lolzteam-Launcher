@@ -1,4 +1,9 @@
-import type { AccountDetails, LauncherSettings, ServiceId } from '@lolzteam/shared-types';
+import type {
+  AccountDetails,
+  LauncherSettings,
+  ProxyEntry,
+  ServiceId,
+} from '@lolzteam/shared-types';
 
 export type LoginMethod = 'native' | 'web';
 
@@ -45,7 +50,9 @@ export type LoginStep =
   | 'launching-telegram'
   // browser (cookie injection)
   | 'injecting-cookies'
-  | 'launching-browser';
+  | 'launching-browser'
+  // discord (token injection)
+  | 'injecting-token';
 
 export interface LoginProgressEvent {
   step: LoginStep;
@@ -61,6 +68,8 @@ export interface AdapterContext {
   /** Fetches the Steam Guard mafile `shared_secret`. Cancels the item's guarantee — call only when a TOTP guard is required. */
   fetchSteamMafile?: (itemId: number) => Promise<string | null>;
   settings?: LauncherSettings;
+  proxy?: ProxyEntry;
+  proxyTest?: { ip: string; ms: number };
 }
 
 export interface ServiceAdapter {
