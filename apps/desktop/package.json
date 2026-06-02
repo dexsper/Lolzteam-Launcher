@@ -17,6 +17,7 @@
   "dependencies": {
     "@mtcute/convert": "^0.29.7",
     "@mtcute/node": "^0.29.7",
+    "country-flag-icons": "^1.6.17",
     "electron-log": "^5.2.4",
     "electron-updater": "^6.8.3",
     "ky": "^1.7.4",
