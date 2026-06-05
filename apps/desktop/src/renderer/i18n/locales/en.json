@@ -184,7 +184,9 @@
       "statusOk": "File set",
       "statusMissing": "Path not set — Telegram login unavailable",
       "alert": "A separate client is recommended — a portable build or fork, not your main Telegram.",
-      "clear": "Reset"
+      "clear": "Reset",
+      "releaseLabel": "Latest Telegram Desktop release",
+      "releaseHint": "Open the GitHub release page — portable builds and installers"
     },
     "language": {
       "title": "Language",

@@ -23,6 +23,9 @@ importers:
       '@mtcute/node':
         specifier: ^0.29.7
         version: 0.29.7
+      country-flag-icons:
+        specifier: ^1.6.17
+        version: 1.6.17
       electron-log:
         specifier: ^5.2.4
         version: 5.4.4
@@ -1367,6 +1370,9 @@ packages:
 
   core-util-is@1.0.3:
     resolution: {integrity: sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==}
+
+  country-flag-icons@1.6.17:
+    resolution: {integrity: sha512-Nmik0289ZVZSI3c7mJR/amg6DyY7Z59b0sTFSKayeX72mHfPzCPJygwJs2pYgQULzuAyWeCUgwAJ+Dq8OR+JFw==}
 
   crc-32@1.2.2:
     resolution: {integrity: sha512-ROmzCKrTnOwybPcJApAA6WBWij23HVfGVNKqqrZpuyZOHqK2CwHSvpGuyt/UNNvaIjEd8X5IFGp4Mh+Ie1IHJQ==}
@@ -4074,6 +4080,8 @@ snapshots:
     optional: true
 
   core-util-is@1.0.3: {}
+
+  country-flag-icons@1.6.17: {}
 
   crc-32@1.2.2: {}
 

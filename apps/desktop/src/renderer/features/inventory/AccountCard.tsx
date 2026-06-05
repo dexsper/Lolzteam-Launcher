@@ -23,6 +23,7 @@ import type {
   SteamInfo,
   TelegramInfo,
 } from '@shared-types';
+import * as CountryFlags from 'country-flag-icons/react/3x2';
 import { useLoginSession, type LoginService } from '~/stores/loginSession';
 import { useSettings } from '~/stores/settings';
 import { Modal } from '~/widgets/Modal/Modal';
@@ -96,21 +97,14 @@ const formatPurchasedAgo = (
 };
 
 // Windows fonts lack regional-indicator flag glyphs, so emoji flags render as
-// letter pairs. Use raster flags from flagcdn (whitelisted in the CSP img-src).
+// letter pairs. Inline SVG flags ship with the app — no external CDN.
+type FlagComponent = (props: { className?: string }) => ReactNode;
+
 const CountryFlag = ({ code }: { code: string }) => {
   if (code.length !== 2) return null;
-  const cc = code.toLowerCase();
-  return (
-    <img
-      className={s.flag}
-      src={`https://flagcdn.com/h20/${cc}.png`}
-      srcSet={`https://flagcdn.com/h40/${cc}.png 2x`}
-      width={20}
-      height={15}
-      alt=""
-      loading="lazy"
-    />
-  );
+  const Flag = (CountryFlags as Record<string, FlagComponent>)[code.toUpperCase()];
+  if (!Flag) return null;
+  return <Flag className={s.flag} />;
 };
 
 const REGION_NAMES_RU = new Intl.DisplayNames(['ru'], { type: 'region' });
