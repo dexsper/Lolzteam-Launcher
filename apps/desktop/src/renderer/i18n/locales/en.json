@@ -95,10 +95,19 @@
     "filter": {
       "all": "All"
     },
+    "scope": {
+      "label": "Account source",
+      "purchased": "Purchased",
+      "listed": "Listed",
+      "emptyListed": "You have no listed accounts of supported services.",
+      "manageListings": "Manage my listings"
+    },
     "filters": {
       "title": "Filters",
       "sortLabel": "Sorting",
-      "labelLabel": "Label",
+      "labelInclude": "Labels",
+      "labelExclude": "Exclude labels",
+      "labelAny": "Any",
       "hideInvalid": "Hide invalid accounts",
       "reset": "Reset filters"
     },

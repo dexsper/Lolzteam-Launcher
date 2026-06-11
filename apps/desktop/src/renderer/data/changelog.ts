@@ -9,6 +9,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.5.1',
+    date: '2026-06-12',
+    changes: {
+      ru: [
+        'Добавлен фильтр на исключение метки',
+        'Улучшена работа с VPN',
+      ],
+      en: [
+        'Added a filter to exclude labels',
+        'Improved VPN handling',
+      ],
+    },
+  },
+  {
     version: '0.5.0',
     date: '2026-06-11',
     changes: {

@@ -17,6 +17,7 @@ const baseDetails = (secrets: Record<string, unknown>, categoryRaw = 'tiktok'): 
   publishedAt: null,
   purchasedAt: null,
   isPurchased: true,
+  scope: 'purchased',
   steam: null,
   telegram: null,
   loginRaw: null,

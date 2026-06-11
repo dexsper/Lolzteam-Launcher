@@ -10,6 +10,7 @@ import {
 } from '@shared-ipc';
 import type {
   AccountDetails,
+  AccountScope,
   AccountSummary,
   AuthStatus,
   AuthTokenPayload,
@@ -47,8 +48,8 @@ const api = {
   },
   accounts: {
     list: () => invoke<AccountSummary[]>(IPC_CHANNELS.ACCOUNTS_LIST),
-    listStream: (only?: ServiceId) =>
-      invoke<void>(IPC_CHANNELS.ACCOUNTS_LIST_STREAM, only ? { only } : undefined),
+    listStream: (only?: ServiceId, scope?: AccountScope) =>
+      invoke<void>(IPC_CHANNELS.ACCOUNTS_LIST_STREAM, only || scope ? { only, scope } : undefined),
     onCategory: (h: (p: AccountsCategoryEvent) => void) =>
       on<AccountsCategoryEvent>(IPC_CHANNELS.ACCOUNTS_CATEGORY, h),
     refresh: () => invoke<AccountSummary[]>(IPC_CHANNELS.ACCOUNTS_REFRESH),

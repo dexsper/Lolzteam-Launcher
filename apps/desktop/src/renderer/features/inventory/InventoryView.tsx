@@ -1,10 +1,11 @@
-import type { AccountSummary, LauncherSettings, ServiceId } from '@shared-types';
+import type { AccountScope, AccountSummary, LauncherSettings, ServiceId } from '@shared-types';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, ArrowDownUp, Check, ListFilter, RefreshCw, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { labelColors } from '~/lib/labelColor';
+import { matchesLabelFilters } from '~/lib/labelFilter';
 import {
+  isScopeLoaded,
   isStreamService,
   mergeWithStream,
   startAccountsStream,
@@ -16,6 +17,7 @@ import { Modal } from '~/widgets/Modal/Modal';
 import { AccountCard } from './AccountCard';
 import { SkeletonCard } from './InventorySkeleton';
 import s from './InventoryView.module.scss';
+import { LabelMultiSelect } from './LabelMultiSelect';
 
 const CHUNK = 24;
 
@@ -105,7 +107,8 @@ interface Bucket {
 const buildBuckets = (
   items: AccountSummary[],
   allLabel: string,
-  loaded: ReadonlySet<SupportedService>,
+  loaded: ReadonlySet<string>,
+  scope: AccountScope,
   streaming: boolean,
 ): Bucket[] => {
   const counts = new Map<SupportedService, number>();
@@ -115,7 +118,7 @@ const buildBuckets = (
     }
   }
   const total = [...counts.values()].reduce((a, b) => a + b, 0);
-  const allDone = SUPPORTED_SERVICES.every((id) => loaded.has(id));
+  const allDone = SUPPORTED_SERVICES.every((id) => loaded.has(`${scope}:${id}`));
   const buckets: Bucket[] = [
     { id: 'all', label: allLabel, count: total, loading: streaming && !allDone },
   ];
@@ -124,7 +127,7 @@ const buildBuckets = (
       id,
       label: SERVICE_LABELS[id],
       count: counts.get(id) ?? 0,
-      loading: !loaded.has(id),
+      loading: !loaded.has(`${scope}:${id}`),
     });
   }
   return buckets;
@@ -140,7 +143,11 @@ export const InventoryView = () => {
     void loadLabels();
   }, [loadLabels]);
   const [filter, setFilter] = useState<Filter>('all');
-  const [labelFilter, setLabelFilter] = useState<number | null>(null);
+  const [scope, setScope] = useState<AccountScope>('purchased');
+  // Label filters: show accounts that carry ANY included label, hiding any that
+  // carry an excluded one. A label can be in include or exclude, not both.
+  const [includeLabels, setIncludeLabels] = useState<number[]>([]);
+  const [excludeLabels, setExcludeLabels] = useState<number[]>([]);
   const [search, setSearch] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [limit, setLimit] = useState(CHUNK);
@@ -154,7 +161,11 @@ export const InventoryView = () => {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const filtersActive =
-    hideInvalid || sortKey !== 'purchased' || sortDir !== 'desc' || labelFilter !== null;
+    hideInvalid ||
+    sortKey !== 'purchased' ||
+    sortDir !== 'desc' ||
+    includeLabels.length > 0 ||
+    excludeLabels.length > 0;
 
   const persistSettings = async (patch: Partial<LauncherSettings>) => {
     const next = await window.launcher.settings.set(patch);
@@ -164,14 +175,33 @@ export const InventoryView = () => {
   const setSortKey = (key: SortKey) => void persistSettings({ inventorySortKey: key });
   const setSortDir = (dir: SortDir) => void persistSettings({ inventorySortDir: dir });
   const toggleHideInvalid = () => void persistSettings({ inventoryHideInvalid: !hideInvalid });
-  // A label may disappear from the palette (deleted on web) while still selected
-  // — clear the filter then so the list doesn't stay mysteriously empty.
+
+  // Toggle a label in the include set; selecting it there clears it from exclude
+  // (a label can't be both required and forbidden).
+  const toggleInclude = (id: number) => {
+    setExcludeLabels((prev) => prev.filter((x) => x !== id));
+    setIncludeLabels((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+  const toggleExclude = (id: number) => {
+    setIncludeLabels((prev) => prev.filter((x) => x !== id));
+    setExcludeLabels((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  // Labels may disappear from the palette (deleted on web) while still selected
+  // — drop them from both filters so the list doesn't stay mysteriously empty.
   useEffect(() => {
-    if (labelFilter !== null && !labels.some((l) => l.id === labelFilter)) setLabelFilter(null);
-  }, [labels, labelFilter]);
+    const ids = new Set(labels.map((l) => l.id));
+    setIncludeLabels((prev) =>
+      prev.every((id) => ids.has(id)) ? prev : prev.filter((id) => ids.has(id)),
+    );
+    setExcludeLabels((prev) =>
+      prev.every((id) => ids.has(id)) ? prev : prev.filter((id) => ids.has(id)),
+    );
+  }, [labels]);
 
   const resetFilters = () => {
-    setLabelFilter(null);
+    setIncludeLabels([]);
+    setExcludeLabels([]);
     void persistSettings({
       inventoryHideInvalid: false,
       inventorySortKey: 'purchased',
@@ -187,35 +217,61 @@ export const InventoryView = () => {
 
   const rawItems = query.data ?? [];
   const items = useMemo(() => rawItems.filter((it) => isSupportedService(it.category)), [rawItems]);
+  // Items in the currently selected scope (purchased vs the user's own listings).
+  const scopedItems = useMemo(
+    () => items.filter((it) => (it.scope ?? 'purchased') === scope),
+    [items, scope],
+  );
+  // Lazily stream the listed scope the first time it's opened (purchased loads
+  // on mount via the stream controller).
+  useEffect(() => {
+    if (!isScopeLoaded(loaded, scope) && !streaming) startAccountsStream(undefined, scope);
+  }, [scope, loaded, streaming]);
+
   const buckets = useMemo(
-    () => buildBuckets(items, t('inventory.filter.all'), loaded, streaming),
-    [items, t, loaded, streaming],
+    () => buildBuckets(scopedItems, t('inventory.filter.all'), loaded, scope, streaming),
+    [scopedItems, t, loaded, scope, streaming],
   );
 
   const trimmedSearch = search.trim();
   const visible = useMemo(() => {
-    const filtered = items.filter(
+    const filtered = scopedItems.filter(
       (it) =>
         (filter === 'all' || it.category === filter) &&
         (!hideInvalid || !isInvalidAccount(it)) &&
-        (labelFilter === null || it.tags.some((tg) => tg.id === labelFilter)) &&
+        matchesLabelFilters(
+          it.tags.map((tg) => tg.id),
+          includeLabels,
+          excludeLabels,
+        ) &&
         matchesQuery(it, trimmedSearch),
     );
     return [...filtered].sort((a, b) => compareItems(a, b, sortKey, sortDir));
-  }, [items, filter, hideInvalid, labelFilter, trimmedSearch, sortKey, sortDir]);
+  }, [
+    scopedItems,
+    filter,
+    hideInvalid,
+    includeLabels,
+    excludeLabels,
+    trimmedSearch,
+    sortKey,
+    sortDir,
+  ]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: deps are the filter inputs — reset paging whenever any of them changes
   useEffect(() => {
     setLimit(CHUNK);
     document.querySelector('[data-scroll-root]')?.scrollTo({ top: 0 });
-  }, [filter, hideInvalid, labelFilter, trimmedSearch, sortKey, sortDir]);
+  }, [filter, scope, hideInvalid, includeLabels, excludeLabels, trimmedSearch, sortKey, sortDir]);
 
   const shown = visible.slice(0, limit);
   const hasMore = limit < visible.length;
 
-  const allDone = SUPPORTED_SERVICES.every((id) => loaded.has(id));
+  const allDone = isScopeLoaded(loaded, scope);
   const activeLoading =
-    filter === 'all' ? streaming && !allDone : isSupportedService(filter) && !loaded.has(filter);
+    filter === 'all'
+      ? streaming && !allDone
+      : isSupportedService(filter) && !loaded.has(`${scope}:${filter}`);
 
   const fullySettled = !streaming && !query.isLoading && !query.isFetching;
 
@@ -240,7 +296,7 @@ export const InventoryView = () => {
     if (streaming) return;
     // On a single-category tab, refresh only that category; on "all", refresh everything.
     const only = filter !== 'all' && isStreamService(filter) ? filter : undefined;
-    startAccountsStream(only);
+    startAccountsStream(only, scope);
     // The profile (balance/currency) may also have changed on the web — refetch
     // it so the top bar reflects a currency switched outside the launcher.
     void qc.invalidateQueries({ queryKey: ['auth-status'] });
@@ -259,7 +315,7 @@ export const InventoryView = () => {
     );
   }
 
-  if (rawItems.length === 0 && fullySettled) {
+  if (scope === 'purchased' && rawItems.length === 0 && fullySettled) {
     return (
       <div className={s.state}>
         <p>{t('inventory.empty')}</p>
@@ -274,7 +330,7 @@ export const InventoryView = () => {
     );
   }
 
-  if (items.length === 0 && fullySettled) {
+  if (scope === 'purchased' && items.length === 0 && fullySettled) {
     return (
       <div className={s.state}>
         <p>{t('inventory.emptyUnsupported')}</p>
@@ -292,6 +348,23 @@ export const InventoryView = () => {
   return (
     <div className={s.view}>
       <div className={s.toolbar}>
+        <div className={s.scopeTabs} role="tablist" aria-label={t('inventory.scope.label')}>
+          {(['purchased', 'listed'] as const).map((sc) => (
+            <button
+              key={sc}
+              type="button"
+              role="tab"
+              aria-selected={scope === sc}
+              className={`${s.scopeTab} ${scope === sc ? s.scopeTabActive : ''}`}
+              onClick={() => {
+                setScope(sc);
+                setFilter('all');
+              }}
+            >
+              {t(`inventory.scope.${sc}`)}
+            </button>
+          ))}
+        </div>
         <div className={s.filters}>
           {buckets.map((b) => (
             <button
@@ -381,36 +454,22 @@ export const InventoryView = () => {
             </div>
 
             {labels.length > 0 && (
-              <div className={s.filterGroup}>
-                <span className={s.filterGroupLabel}>{t('inventory.filters.labelLabel')}</span>
-                <div className={s.labelChips}>
-                  {labels.map((label) => {
-                    const on = labelFilter === label.id;
-                    const c = labelColors(label.bc);
-                    return (
-                      <button
-                        key={label.id}
-                        type="button"
-                        className={`${s.labelChip} ${on ? s.labelChipOn : ''}`}
-                        style={
-                          on
-                            ? {
-                                backgroundColor: c.background,
-                                color: c.text,
-                                borderColor: c.background,
-                              }
-                            : undefined
-                        }
-                        onClick={() => setLabelFilter(on ? null : label.id)}
-                        aria-pressed={on}
-                      >
-                        {on && <Check size={13} />}
-                        <span>{label.title}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <>
+                <LabelMultiSelect
+                  title={t('inventory.filters.labelInclude')}
+                  labels={labels}
+                  selected={includeLabels}
+                  onToggle={toggleInclude}
+                  variant="include"
+                />
+                <LabelMultiSelect
+                  title={t('inventory.filters.labelExclude')}
+                  labels={labels}
+                  selected={excludeLabels}
+                  onToggle={toggleExclude}
+                  variant="exclude"
+                />
+              </>
             )}
 
             <button
@@ -437,7 +496,7 @@ export const InventoryView = () => {
         </Modal>
       )}
 
-      {visible.length === 0 && activeLoading ? (
+      {visible.length === 0 && (activeLoading || !allDone) ? (
         <div className={s.grid}>
           {Array.from({ length: SKELETON_INITIAL }, (_, i) => (
             <SkeletonCard key={i} />
@@ -446,7 +505,20 @@ export const InventoryView = () => {
       ) : visible.length === 0 ? (
         <div className={s.noResults}>
           <Search size={24} className={s.noResultsIcon} />
-          <p>{t('inventory.noResults')}</p>
+          {scope === 'listed' && scopedItems.length === 0 ? (
+            <>
+              <p>{t('inventory.scope.emptyListed')}</p>
+              <button
+                type="button"
+                className={s.retry}
+                onClick={() => window.launcher.app.openExternal('https://lzt.market/user/items')}
+              >
+                {t('inventory.scope.manageListings')}
+              </button>
+            </>
+          ) : (
+            <p>{t('inventory.noResults')}</p>
+          )}
         </div>
       ) : (
         <div key={filter} className={s.grid}>

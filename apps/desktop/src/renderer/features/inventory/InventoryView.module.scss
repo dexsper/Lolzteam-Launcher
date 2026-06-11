@@ -13,6 +13,43 @@
   flex-wrap: wrap;
 }
 
+.scopeTabs {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: $radius-pill;
+  background: $color-surface-overlay;
+  border: 1px solid $color-border;
+}
+
+.scopeTab {
+  @include button-reset;
+  @include clickable;
+  padding: $space-1 $space-4;
+  border-radius: $radius-pill;
+  font-size: $fs-sm;
+  font-weight: 600;
+  color: $color-text-soft;
+  transition: background $duration-fast $ease-out, color $duration-fast $ease-out;
+
+  &:hover {
+    color: $color-text;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.scopeTabActive {
+  background: $color-accent;
+  color: #06170f;
+
+  &:hover {
+    color: #06170f;
+  }
+}
+
 .filters {
   display: flex;
   flex-wrap: wrap;
@@ -349,6 +386,17 @@
 .labelChipOn {
   // Background/colour come from the label's own hue via inline style.
   border-color: transparent;
+}
+
+.labelChipExclude {
+  color: #ff8a7a;
+  background: #c0392b29;
+  border-color: #c0392b80;
+
+  &:hover {
+    color: #ff8a7a;
+    background: #c0392b3d;
+  }
 }
 
 .sortRow {

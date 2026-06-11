@@ -95,10 +95,19 @@
     "filter": {
       "all": "Все"
     },
+    "scope": {
+      "label": "Источник аккаунтов",
+      "purchased": "Купленные",
+      "listed": "Выложенные",
+      "emptyListed": "У вас нет выложенных аккаунтов поддерживаемых сервисов.",
+      "manageListings": "Открыть мои продажи"
+    },
     "filters": {
       "title": "Фильтры",
       "sortLabel": "Сортировка",
-      "labelLabel": "Метка",
+      "labelInclude": "Метки",
+      "labelExclude": "Исключить метки",
+      "labelAny": "Любые",
       "hideInvalid": "Не показывать невалид",
       "reset": "Сбросить фильтры"
     },

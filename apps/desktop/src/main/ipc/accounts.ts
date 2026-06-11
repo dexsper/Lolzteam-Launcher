@@ -1,6 +1,6 @@
 import { IPC_CHANNELS } from '@shared-ipc';
 import { SERVICE_CATEGORY_ID } from '@shared-types';
-import type { AccountSummary, ServiceId } from '@shared-types';
+import type { AccountScope, AccountSummary, ServiceId } from '@shared-types';
 import { type IpcMainInvokeEvent, ipcMain } from 'electron';
 import { onTokenChange } from '../auth/token-store';
 import {
@@ -31,7 +31,10 @@ const fetchAndCache = (): Promise<AccountSummary[]> => {
   if (inflight) return inflight;
   const p = listPurchasedAccounts()
     .then(async (items) => {
-      if (items.length > 0) await saveCachedAccounts(items);
+      // Replace only the purchased slice; keep any cached listed items.
+      const cached = (await loadCachedAccounts())?.items ?? [];
+      const kept = cached.filter((it) => (it.scope ?? 'purchased') !== 'purchased');
+      await saveCachedAccounts([...kept, ...items]);
       return items;
     })
     .finally(() => {
@@ -48,7 +51,11 @@ const loadCached = async (): Promise<AccountSummary[]> => {
 
 let streaming = false;
 
-const streamCategories = async (event: IpcMainInvokeEvent, only?: ServiceId): Promise<void> => {
+const streamCategories = async (
+  event: IpcMainInvokeEvent,
+  only?: ServiceId,
+  scope: AccountScope = 'purchased',
+): Promise<void> => {
   if (streaming) return;
   streaming = true;
   const send = (payload: Parameters<typeof event.sender.send>[1]) => {
@@ -57,29 +64,31 @@ const streamCategories = async (event: IpcMainInvokeEvent, only?: ServiceId): Pr
     }
   };
   // When a single category is requested, stream only it and replace just its
-  // slice of the cache. Otherwise stream the full fixed order and overwrite.
+  // slice of the cache. Otherwise stream the full fixed order for this scope.
   const target = only !== undefined && STREAM_ORDER.includes(only) ? only : undefined;
   const order: readonly ServiceId[] = target ? [target] : STREAM_ORDER;
   const all: AccountSummary[] = [];
   let unfiltered: AccountSummary[] | null = null;
   const getUnfiltered = async (): Promise<AccountSummary[]> => {
-    if (unfiltered === null) unfiltered = await listPurchasedAccounts();
+    if (unfiltered === null) unfiltered = await listPurchasedAccounts(scope);
     return unfiltered;
   };
+  const scopeOf = (it: AccountSummary): AccountScope => it.scope ?? 'purchased';
   try {
     for (const serviceId of order) {
       const categoryId = SERVICE_CATEGORY_ID[serviceId];
       if (categoryId === undefined) {
         const items = (await getUnfiltered()).filter((it) => it.category === serviceId);
         all.push(...items);
-        if (items.length > 0) send({ serviceId, items, categoryDone: false, done: false });
-        send({ serviceId, items: [], categoryDone: true, done: false });
+        if (items.length > 0) send({ serviceId, scope, items, categoryDone: false, done: false });
+        send({ serviceId, scope, items: [], categoryDone: true, done: false });
         continue;
       }
-      await listAccountsByCategory(categoryId, (pageItems, progress) => {
+      await listAccountsByCategory(categoryId, scope, (pageItems, progress) => {
         all.push(...pageItems);
         send({
           serviceId,
+          scope,
           items: pageItems,
           categoryDone: false,
           done: false,
@@ -87,19 +96,20 @@ const streamCategories = async (event: IpcMainInvokeEvent, only?: ServiceId): Pr
           totalPages: progress.totalPages,
         });
       });
-      send({ serviceId, items: [], categoryDone: true, done: false });
+      send({ serviceId, scope, items: [], categoryDone: true, done: false });
     }
+    const cached = (await loadCachedAccounts())?.items ?? [];
     if (target) {
-      const cached = await loadCachedAccounts();
-      if (cached) {
-        const kept = cached.items.filter((it) => it.category !== target);
-        await saveCachedAccounts([...kept, ...all]);
-      }
-    } else if (all.length > 0) {
-      await saveCachedAccounts(all);
+      // Replace just this scope+category slice; keep everything else.
+      const kept = cached.filter((it) => !(scopeOf(it) === scope && it.category === target));
+      await saveCachedAccounts([...kept, ...all]);
+    } else {
+      // Replace the whole scope; keep the other scope's items.
+      const kept = cached.filter((it) => scopeOf(it) !== scope);
+      await saveCachedAccounts([...kept, ...all]);
     }
     const last = order[order.length - 1] as ServiceId;
-    send({ serviceId: last, items: [], categoryDone: true, done: true });
+    send({ serviceId: last, scope, items: [], categoryDone: true, done: true });
   } finally {
     streaming = false;
   }
@@ -119,8 +129,10 @@ const toTagId = (payload?: { tagId?: unknown }): number => {
 
 export const registerAccountsIpc = () => {
   ipcMain.handle(IPC_CHANNELS.ACCOUNTS_LIST, () => loadCached());
-  ipcMain.handle(IPC_CHANNELS.ACCOUNTS_LIST_STREAM, (event, payload?: { only?: ServiceId }) =>
-    streamCategories(event, payload?.only),
+  ipcMain.handle(
+    IPC_CHANNELS.ACCOUNTS_LIST_STREAM,
+    (event, payload?: { only?: ServiceId; scope?: AccountScope }) =>
+      streamCategories(event, payload?.only, payload?.scope ?? 'purchased'),
   );
   ipcMain.handle(IPC_CHANNELS.ACCOUNTS_REFRESH, () => fetchAndCache());
   ipcMain.handle(IPC_CHANNELS.ACCOUNTS_CLEAR_CACHE, async () => {

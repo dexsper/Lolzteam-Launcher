@@ -96,6 +96,9 @@ export interface TelegramInfo {
   contactsCount: number | null;
 }
 
+/** Where an account came from: the user's purchases vs their own listings. */
+export type AccountScope = 'purchased' | 'listed';
+
 export interface AccountSummary {
   itemId: number;
   category: ServiceId | null;
@@ -112,6 +115,8 @@ export interface AccountSummary {
   /** When the buyer purchased the item, unix seconds. Null if unknown. */
   purchasedAt: number | null;
   isPurchased: boolean;
+  /** 'purchased' = bought by the user; 'listed' = the user's own listing. */
+  scope: AccountScope;
   /** Present only for Steam items; null when fields are unavailable. */
   steam: SteamInfo | null;
   /** Present only for Telegram items; null when fields are unavailable. */

@@ -3,6 +3,7 @@ import type { RawMarketItem, RawProfileResponse } from '@market-sdk';
 import { categoryNameToServiceId } from '@shared-types';
 import type {
   AccountDetails,
+  AccountScope,
   AccountSummary,
   AccountTag,
   AuthSession,
@@ -316,7 +317,7 @@ const pickCategoryTitle = (item: RawMarketItem): string => {
   ).toString();
 };
 
-const normalizeItem = (item: RawMarketItem): AccountSummary => {
+const normalizeItem = (item: RawMarketItem, scope: AccountScope): AccountSummary => {
   const categoryRaw = pickCategoryRaw(item);
   const category = categoryNameToServiceId(categoryRaw);
   return {
@@ -334,6 +335,7 @@ const normalizeItem = (item: RawMarketItem): AccountSummary => {
     publishedAt: item.published_date ?? null,
     purchasedAt: extractPurchasedAt(item),
     isPurchased: item.item_state === 'paid' || item.item_state === 'closed',
+    scope,
     steam: extractSteamInfo(item, category),
     telegram: extractTelegramInfo(item, category),
   };
@@ -342,7 +344,17 @@ const normalizeItem = (item: RawMarketItem): AccountSummary => {
 type PageProgress = { page: number; totalPages: number | null };
 type OnPage = (items: AccountSummary[], progress: PageProgress) => void;
 
-const paginateOrders = async (categoryId?: number, onPage?: OnPage): Promise<AccountSummary[]> => {
+// 'purchased' reads the user's orders; 'listed' reads their own active listings.
+const fetchPage = (scope: AccountScope, page: number, categoryId?: number) =>
+  scope === 'listed'
+    ? getClient().listUser({ page, categoryId, show: 'active' })
+    : getClient().listOrders({ page, categoryId });
+
+const paginate = async (
+  scope: AccountScope,
+  categoryId?: number,
+  onPage?: OnPage,
+): Promise<AccountSummary[]> => {
   const epoch = tokenEpoch;
   const out: AccountSummary[] = [];
   let page = 1;
@@ -351,9 +363,11 @@ const paginateOrders = async (categoryId?: number, onPage?: OnPage): Promise<Acc
     // Token changed mid-stream (logout/re-login): stop before the next request
     // so we don't hit the API with a stale token.
     if (tokenEpoch !== epoch) break;
-    const resp = await getClient().listOrders({ page, categoryId });
+    const resp = await fetchPage(scope, page, categoryId);
     const items = resp.items ?? [];
-    const normalized = items.filter((it) => !isResold(it)).map(normalizeItem);
+    // Resold items only appear among purchases; own listings are kept as-is.
+    const visible = scope === 'listed' ? items : items.filter((it) => !isResold(it));
+    const normalized = visible.map((it) => normalizeItem(it, scope));
     out.push(...normalized);
     const perPage = resp.perPage || items.length;
     const totalPages =
@@ -369,27 +383,30 @@ const paginateOrders = async (categoryId?: number, onPage?: OnPage): Promise<Acc
   return out;
 };
 
-export const listPurchasedAccounts = async (): Promise<AccountSummary[]> => {
+export const listPurchasedAccounts = async (
+  scope: AccountScope = 'purchased',
+): Promise<AccountSummary[]> => {
   const token = await loadToken();
   if (!token) return [];
   try {
-    return await paginateOrders();
+    return await paginate(scope);
   } catch (err) {
-    log.warn('[market] listPurchasedAccounts failed', err);
+    log.warn(`[market] listPurchasedAccounts(${scope}) failed`, err);
     return [];
   }
 };
 
 export const listAccountsByCategory = async (
   categoryId: number,
+  scope: AccountScope = 'purchased',
   onPage?: OnPage,
 ): Promise<AccountSummary[]> => {
   const token = await loadToken();
   if (!token) return [];
   try {
-    return await paginateOrders(categoryId, onPage);
+    return await paginate(scope, categoryId, onPage);
   } catch (err) {
-    log.warn(`[market] listAccountsByCategory(${categoryId}) failed`, err);
+    log.warn(`[market] listAccountsByCategory(${categoryId}, ${scope}) failed`, err);
     return [];
   }
 };
@@ -512,7 +529,8 @@ export const getAccountDetails = async (itemId: number): Promise<AccountDetails 
     const resp = await getClient().getItem(itemId);
     const item = resp.item;
     if (!item) return null;
-    const summary = normalizeItem(item);
+    // Scope is irrelevant for a single item's login flow; default to 'purchased'.
+    const summary = normalizeItem(item, 'purchased');
     const loginRaw = pickLoginRaw(item, summary.category);
     const passwordRaw = pickPasswordRaw(item, summary.category);
     log.debug(

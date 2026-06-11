@@ -1,0 +1,144 @@
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: $space-2;
+}
+
+.groupLabel {
+  font-size: $fs-xs;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: $color-text-muted;
+}
+
+.root {
+  position: relative;
+}
+
+.control {
+  @include button-reset;
+  @include clickable;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-2;
+  min-height: 40px;
+  padding: $space-2 $space-3;
+  border-radius: $radius-md;
+  background: $color-surface-overlay;
+  border: 1px solid $color-border;
+  color: $color-text;
+  transition: border-color $duration-fast $ease-out;
+
+  &:hover {
+    border-color: $color-border-strong;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.placeholder {
+  color: $color-text-muted;
+  font-size: $fs-sm;
+}
+
+.chip {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: $color-surface-raised;
+  color: $color-text;
+}
+
+.chipExclude {
+  color: #ff8a7a;
+  background: #c0392b29;
+  border: 1px solid #c0392b80;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: $color-text-muted;
+  transition: transform $duration-fast $ease-out;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.menu {
+  margin-top: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: $space-1;
+  border-radius: $radius-md;
+  background: $color-surface;
+  border: 1px solid $color-border-strong;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  @include scrollbar;
+}
+
+.option {
+  @include button-reset;
+  @include clickable;
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  width: 100%;
+  padding: $space-2 $space-2;
+  border-radius: $radius-sm;
+  color: $color-text-soft;
+  font-size: $fs-sm;
+  transition: background $duration-fast $ease-out, color $duration-fast $ease-out;
+
+  &:hover {
+    background: $color-surface-overlay;
+    color: $color-text;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.optionOn {
+  color: $color-text;
+  background: $color-surface-overlay;
+}
+
+.dot {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.optionTitle {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.checkExclude {
+  color: #ff8a7a;
+}

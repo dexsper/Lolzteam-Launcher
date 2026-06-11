@@ -21,6 +21,7 @@ const baseDetails = (secrets: Record<string, unknown>): AccountDetails => ({
   publishedAt: null,
   purchasedAt: null,
   isPurchased: true,
+  scope: 'purchased',
   steam: null,
   telegram: null,
   loginRaw: null,
