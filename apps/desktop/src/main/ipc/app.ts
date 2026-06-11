@@ -1,7 +1,7 @@
 import { copyFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { IPC_CHANNELS, LOLZ_CONFIG, type NetworkStatus } from '@shared-ipc';
-import { BrowserWindow, app, dialog, ipcMain, shell } from 'electron';
+import { BrowserWindow, app, dialog, ipcMain, net, shell } from 'electron';
 
 const ALLOWED_URL_PREFIXES = ['https://', 'http://'];
 
@@ -14,7 +14,7 @@ const pingApi = async (): Promise<NetworkStatus> => {
   const timer = setTimeout(() => controller.abort(), PING_TIMEOUT_MS);
   const started = Date.now();
   try {
-    await fetch(`${LOLZ_CONFIG.marketApiUrl}/me`, {
+    await net.fetch(`${LOLZ_CONFIG.marketApiUrl}/me`, {
       method: 'GET',
       headers: { Accept: 'application/json' },
       signal: controller.signal,

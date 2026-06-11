@@ -12,7 +12,7 @@ import type {
   TelegramInfo,
   UserLabel,
 } from '@shared-types';
-import { app } from 'electron';
+import { app, net } from 'electron';
 import log from 'electron-log/main';
 import { extractSharedSecret } from '../adapters/steam/mafile';
 import { loadToken, onTokenChange } from '../auth/token-store';
@@ -24,6 +24,7 @@ const getClient = (): MarketClient => {
     client = new MarketClient({
       getToken: () => loadToken(),
       userAgent: `LolzteamLauncher/${app.getVersion?.() ?? '0.0.0'} (+desktop)`,
+      fetch: net.fetch.bind(net) as typeof globalThis.fetch,
     });
   }
   return client;
