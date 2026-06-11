@@ -14,6 +14,7 @@ export interface MarketClientOptions {
   baseUrl?: string;
   getToken: () => Promise<string | null> | string | null;
   userAgent?: string;
+  fetch?: typeof globalThis.fetch;
 }
 
 export class MarketClient {
@@ -26,6 +27,7 @@ export class MarketClient {
       prefixUrl: opts.baseUrl ?? LOLZ_CONFIG.marketApiUrl,
       timeout: 20_000,
       retry: { limit: 2, methods: ['get'], statusCodes: [429, 500, 502, 503, 504] },
+      ...(opts.fetch ? { fetch: opts.fetch } : {}),
       hooks: {
         beforeRequest: [
           async (req) => {
