@@ -63,11 +63,20 @@
   }
 }
 
+.actions {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: $space-2;
+  width: 100%;
+}
+
 .button {
   @include button-reset;
   @include clickable;
   display: inline-flex;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   align-items: center;
   justify-content: center;
   gap: $space-2;
@@ -86,6 +95,34 @@
   &:disabled {
     background: $color-surface-overlay;
     color: $color-text-muted;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.proxyButton {
+  @include button-reset;
+  @include clickable;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  align-self: stretch;
+  border-radius: 96px;
+  background: $color-surface-overlay;
+  color: $color-text;
+  transition: filter $duration-fast $ease-out, background $duration-fast $ease-out;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.25);
+  }
+
+  &:disabled {
+    opacity: 0.5;
     cursor: not-allowed;
   }
 

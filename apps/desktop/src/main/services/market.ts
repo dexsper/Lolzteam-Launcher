@@ -1,5 +1,5 @@
 import { MarketClient } from '@market-sdk';
-import type { RawMarketItem, RawProfileResponse } from '@market-sdk';
+import type { RawLetter, RawMarketItem, RawProfileResponse, RawUserTag } from '@market-sdk';
 import { categoryNameToServiceId } from '@shared-types';
 import type {
   AccountDetails,
@@ -7,16 +7,20 @@ import type {
   AccountSummary,
   AccountTag,
   AuthSession,
+  MailLetter,
+  MailLettersRequest,
+  MailLettersResult,
   ServiceId,
   SteamGame,
   SteamInfo,
   TelegramInfo,
   UserLabel,
 } from '@shared-types';
-import { app, net } from 'electron';
+import { app } from 'electron';
 import log from 'electron-log/main';
 import { extractSharedSecret } from '../adapters/steam/mafile';
 import { loadToken, onTokenChange } from '../auth/token-store';
+import { appFetch } from './api-session';
 
 let client: MarketClient | null = null;
 
@@ -25,7 +29,7 @@ const getClient = (): MarketClient => {
     client = new MarketClient({
       getToken: () => loadToken(),
       userAgent: `LolzteamLauncher/${app.getVersion?.() ?? '0.0.0'} (+desktop)`,
-      fetch: net.fetch.bind(net) as typeof globalThis.fetch,
+      fetch: appFetch,
     });
   }
   return client;
@@ -99,6 +103,9 @@ const isAuthRejection = (err: unknown): boolean => {
   const status = httpStatusOf(err);
   return status === 401 || status === 403;
 };
+
+const isAbortError = (err: unknown): boolean =>
+  err instanceof Error && (err.name === 'AbortError' || err.message.includes('aborted'));
 
 export const fetchProfileResult = async (): Promise<ProfileResult> => {
   const token = await loadToken();
@@ -346,25 +353,24 @@ type PageProgress = { page: number; totalPages: number | null };
 type OnPage = (items: AccountSummary[], progress: PageProgress) => void;
 
 // 'purchased' reads the user's orders; 'listed' reads their own active listings.
-const fetchPage = (scope: AccountScope, page: number, categoryId?: number) =>
+const fetchPage = (scope: AccountScope, page: number, categoryId?: number, signal?: AbortSignal) =>
   scope === 'listed'
-    ? getClient().listUser({ page, categoryId, show: 'active' })
-    : getClient().listOrders({ page, categoryId });
+    ? getClient().listUser({ page, categoryId, show: 'active' }, signal)
+    : getClient().listOrders({ page, categoryId }, signal);
 
 const paginate = async (
   scope: AccountScope,
   categoryId?: number,
   onPage?: OnPage,
+  signal?: AbortSignal,
 ): Promise<AccountSummary[]> => {
   const epoch = tokenEpoch;
   const out: AccountSummary[] = [];
   let page = 1;
   let hasNext = true;
   while (hasNext && page <= 50) {
-    // Token changed mid-stream (logout/re-login): stop before the next request
-    // so we don't hit the API with a stale token.
-    if (tokenEpoch !== epoch) break;
-    const resp = await fetchPage(scope, page, categoryId);
+    if (tokenEpoch !== epoch || signal?.aborted) break;
+    const resp = await fetchPage(scope, page, categoryId, signal);
     const items = resp.items ?? [];
     // Resold items only appear among purchases; own listings are kept as-is.
     const visible = scope === 'listed' ? items : items.filter((it) => !isResold(it));
@@ -386,12 +392,14 @@ const paginate = async (
 
 export const listPurchasedAccounts = async (
   scope: AccountScope = 'purchased',
+  signal?: AbortSignal,
 ): Promise<AccountSummary[]> => {
   const token = await loadToken();
   if (!token) return [];
   try {
-    return await paginate(scope);
+    return await paginate(scope, undefined, undefined, signal);
   } catch (err) {
+    if (isAbortError(err) || signal?.aborted) return [];
     log.warn(`[market] listPurchasedAccounts(${scope}) failed`, err);
     return [];
   }
@@ -401,12 +409,14 @@ export const listAccountsByCategory = async (
   categoryId: number,
   scope: AccountScope = 'purchased',
   onPage?: OnPage,
+  signal?: AbortSignal,
 ): Promise<AccountSummary[]> => {
   const token = await loadToken();
   if (!token) return [];
   try {
-    return await paginate(scope, categoryId, onPage);
+    return await paginate(scope, categoryId, onPage, signal);
   } catch (err) {
+    if (isAbortError(err) || signal?.aborted) return [];
     log.warn(`[market] listAccountsByCategory(${categoryId}, ${scope}) failed`, err);
     return [];
   }
@@ -562,10 +572,9 @@ onTokenChange(() => {
   labelsCache = null;
 });
 
-const normalizeLabels = (raw: RawProfileResponse): UserLabel[] => {
-  const tags = Array.isArray(raw.user.tags) ? raw.user.tags : [];
+const mapUserTags = (tags: RawUserTag[] | undefined): UserLabel[] => {
   const out: UserLabel[] = [];
-  for (const t of tags) {
+  for (const t of tags ?? []) {
     const id = asNumber(t?.tag_id);
     const title = asString(t?.title)?.trim();
     if (id === null || !title) continue;
@@ -579,6 +588,9 @@ const normalizeLabels = (raw: RawProfileResponse): UserLabel[] => {
   }
   return out;
 };
+
+const normalizeLabels = (raw: RawProfileResponse): UserLabel[] =>
+  mapUserTags(raw.user.tags as RawUserTag[] | undefined);
 
 export const listUserLabels = async (opts?: { refresh?: boolean }): Promise<UserLabel[]> => {
   if (!opts?.refresh && labelsCache) return labelsCache;
@@ -601,6 +613,54 @@ const tagOpError = (resp: { errors?: string[] | string }): string | null => {
   if (Array.isArray(e) && e.length > 0 && typeof e[0] === 'string') return e[0];
   if (typeof e === 'string' && e) return e;
   return null;
+};
+
+export type LabelResult = { ok: true; labels: UserLabel[] } | { ok: false; message: string };
+
+const refreshUserTags = async (): Promise<UserLabel[]> => {
+  const resp = await getClient().getUserTags();
+  if (tagOpError(resp) || !Array.isArray(resp.tags)) return labelsCache ?? [];
+  labelsCache = mapUserTags(resp.tags);
+  return labelsCache;
+};
+
+const runLabelMutation = async (
+  op: () => Promise<{ errors?: string[] | string }>,
+  what: string,
+): Promise<LabelResult> => {
+  const token = await loadToken();
+  if (!token) return { ok: false, message: 'not_authenticated' };
+  let resp: { errors?: string[] | string };
+  try {
+    resp = await op();
+  } catch (err) {
+    log.warn(`[market] ${what} failed`, err);
+    return { ok: false, message: err instanceof Error ? err.message : 'label_failed' };
+  }
+  const err = tagOpError(resp);
+  if (err) return { ok: false, message: err };
+  try {
+    return { ok: true, labels: await refreshUserTags() };
+  } catch (refreshErr) {
+    log.warn(`[market] ${what} refresh failed (mutation ok)`, refreshErr);
+    return { ok: true, labels: labelsCache ?? [] };
+  }
+};
+
+export const createLabel = (title: string, bc: string): Promise<LabelResult> =>
+  runLabelMutation(() => getClient().createUserTag(title, bc), 'createLabel');
+
+export const updateLabel = (tagId: number, title: string, bc: string): Promise<LabelResult> =>
+  runLabelMutation(() => getClient().updateUserTag(tagId, title, bc), 'updateLabel');
+
+export const deleteLabel = (tagId: number): Promise<LabelResult> =>
+  runLabelMutation(() => getClient().deleteUserTag(tagId), 'deleteLabel');
+
+export const reorderLabels = async (tagIds: number[]): Promise<LabelResult> => {
+  const known = (labelsCache ?? (await listUserLabels())).map((l) => l.id);
+  const seen = new Set(tagIds);
+  const full = [...tagIds, ...known.filter((id) => !seen.has(id))];
+  return runLabelMutation(() => getClient().reorderUserTags(full), 'reorderLabels');
 };
 
 export const addItemTag = async (
@@ -653,4 +713,41 @@ export const setCurrency = async (
     log.warn(`[market] setCurrency(${currency}) failed`, err);
     return { ok: false, message: err instanceof Error ? err.message : 'currency_failed' };
   }
+};
+
+const normalizeLetter = (raw: RawLetter, idx: number): MailLetter => ({
+  id: String(raw.id ?? idx),
+  subject: asString(raw.subject) ?? asString(raw.title),
+  from: asString(raw.from) ?? asString(raw.sender),
+  to: asString(raw.to),
+  date: asNumber(raw.date) ?? asNumber(raw.timestamp),
+  textPlain: asString(raw.textPlain) ?? asString(raw.text) ?? asString(raw.body),
+  textHtml: asString(raw.textHtml) ?? asString(raw.html),
+});
+
+const lettersError = (resp: { error?: string; errors?: string[] | string }): string | null => {
+  if (typeof resp.error === 'string' && resp.error) return resp.error;
+  return tagOpError(resp);
+};
+
+export const fetchLetters = async (req: MailLettersRequest): Promise<MailLettersResult> => {
+  const token = await loadToken();
+  if (!token) return { ok: false, message: 'not_authenticated' };
+  for (let attempt = 0; attempt < 50; attempt++) {
+    try {
+      const resp = await getClient().getLetters(req);
+      const err = lettersError(resp);
+      if (err === 'retry_request') {
+        await new Promise((r) => setTimeout(r, 1500));
+        continue;
+      }
+      if (err) return { ok: false, message: err };
+      const rawList = resp.letters ?? resp.items ?? [];
+      return { ok: true, letters: rawList.map(normalizeLetter) };
+    } catch (err) {
+      log.warn('[market] fetchLetters failed', err);
+      return { ok: false, message: err instanceof Error ? err.message : 'letters_failed' };
+    }
+  }
+  return { ok: false, message: 'retry_request' };
 };

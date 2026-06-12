@@ -9,16 +9,40 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.6.0',
+    date: '2026-06-12',
+    changes: {
+      ru: [
+        'Добавлена возможность редактировать, удалять и создавать метки в вашем профиле',
+        'Добавлена возможность использовать в самой программе Proxy',
+        'Добавлена новая страница "Почта", теперь можно быстро просматривать письма с любой почты, вставив e-mail:password',
+        'Добавлена возможность изменять лимит аккаунтов в настройках Telegram',
+        'Исправлено отображение дробных цен',
+        'Изменена фотография в установщике',
+      ],
+      en: [
+        'Added editing, deleting and creating labels in your profile',
+        'Added the ability to use a proxy inside the app itself',
+        'Added a new "Mail" page — quickly view letters from any mailbox by pasting email:password',
+        'Added an account-limit setting in Telegram settings',
+        'Fixed display of fractional prices',
+        'Changed the installer image',
+      ],
+    },
+  },
+  {
     version: '0.5.1',
     date: '2026-06-12',
     changes: {
       ru: [
         'Добавлен фильтр на исключение метки',
         'Улучшена работа с VPN',
+        'Добавлен просмотр и вход в выложенные аккаунты',
       ],
       en: [
         'Added a filter to exclude labels',
         'Improved VPN handling',
+        'Added browsing and logging in to uploaded accounts',
       ],
     },
   },

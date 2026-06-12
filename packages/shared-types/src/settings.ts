@@ -33,15 +33,18 @@ export interface ProxyEntry {
 
 export interface LauncherSettings {
   telegramExePath: string | null;
+  telegramMaxAccounts: number;
   locale: LocalePreference;
   /** Sign into Steam with an invisible online status. */
   steamInvisible: boolean;
   proxyEnabled: boolean;
   proxies: ProxyEntry[];
   proxyServices: ServiceId[];
+  appProxyId: string | null;
   inventoryHideInvalid: boolean;
   inventorySortKey: InventorySortKey;
   inventorySortDir: InventorySortDir;
+  mailHistory: string[];
 }
 
 export type InventorySortKey = 'purchased' | 'price' | 'warranty';
@@ -49,14 +52,17 @@ export type InventorySortDir = 'asc' | 'desc';
 
 export const DEFAULT_SETTINGS: LauncherSettings = {
   telegramExePath: null,
+  telegramMaxAccounts: 3,
   locale: 'ru',
   steamInvisible: false,
   proxyEnabled: false,
   proxies: [],
   proxyServices: [...PROXY_CAPABLE_SERVICES],
+  appProxyId: null,
   inventoryHideInvalid: false,
   inventorySortKey: 'purchased',
   inventorySortDir: 'desc',
+  mailHistory: [],
 };
 
 export interface SettingsResponse {

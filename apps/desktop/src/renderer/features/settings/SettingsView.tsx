@@ -12,6 +12,12 @@ import { ProfileView } from './ProfileView';
 import { ProxyView } from './ProxyView';
 import s from './SettingsView.module.scss';
 
+const TG_ACCOUNT_OPTIONS: readonly { value: number; label: string }[] = [
+  { value: 3, label: '3' },
+  { value: 4, label: '4' },
+  { value: 0, label: '∞' },
+];
+
 export const SettingsView = () => {
   const { t } = useTranslation();
   const qc = useQueryClient();
@@ -86,6 +92,11 @@ export const SettingsView = () => {
     setSettings(next.settings);
   };
 
+  const setTelegramMaxAccounts = async (n: number) => {
+    const next = await window.launcher.settings.set({ telegramMaxAccounts: n });
+    setSettings(next.settings);
+  };
+
   const toggleSteamInvisible = async () => {
     const next = await window.launcher.settings.set({
       steamInvisible: !(settings?.steamInvisible ?? false),
@@ -144,6 +155,7 @@ export const SettingsView = () => {
   const openExternal = (url: string) => () => void window.launcher.app.openExternal(url);
 
   const tgPath = settings?.telegramExePath ?? null;
+  const telegramMaxAccounts = settings?.telegramMaxAccounts ?? 3;
   const currentLocale: LocalePreference = settings?.locale ?? 'ru';
   const steamInvisible = settings?.steamInvisible ?? false;
 
@@ -287,6 +299,31 @@ export const SettingsView = () => {
                   fill="currentColor"
                 />
               </svg>
+            </div>
+            <div className={s.settingsMenu}>
+              <div className={s.text}>
+                <span className={s.title}>{t('settings.telegram.accountsLabel')}</span>
+                <div className={s.descriptionBlock}>
+                  <span className={s.description}>{t('settings.telegram.accountsHint')}</span>
+                </div>
+              </div>
+              <div className={s.segmented}>
+                {TG_ACCOUNT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={`${s.segmentBtn} ${
+                      telegramMaxAccounts === opt.value ? s.segmentBtnActive : ''
+                    }`}
+                    onClick={() => void setTelegramMaxAccounts(opt.value)}
+                    title={
+                      opt.value === 0 ? t('settings.telegram.accountsUnlimited') : String(opt.value)
+                    }
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
           <div className={s.settingsItem}>

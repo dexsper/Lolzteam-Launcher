@@ -8,13 +8,38 @@
   .brand {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+  }
+
+  .brandLogoButton {
+    @include button-reset;
+    @include clickable;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    margin: -4px 4px -4px -4px;
+    border-radius: $radius-md;
+    transition: background 120ms ease, transform 120ms ease;
+
+    &:hover {
+      background: rgba(0, 186, 120, 0.09);
+    }
+
+    &:active {
+      transform: scale(0.94);
+    }
+
+    &:focus-visible {
+      @include focus-ring;
+    }
   }
 
   .brandLogo {
     width: 28px;
     height: 28px;
     user-select: none;
+    display: block;
   }
 
   .versionPill {

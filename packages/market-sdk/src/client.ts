@@ -4,10 +4,14 @@ import type {
   CheckAccountResponse,
   EmailCodeResponse,
   RawEditMeResponse,
+  RawLettersResponse,
   RawMarketItem,
   RawOrdersResponse,
   RawProfileResponse,
+  RawStatusResponse,
   RawTagOpResponse,
+  RawUserTagResponse,
+  RawUserTagsResponse,
 } from './types';
 
 export interface MarketClientOptions {
@@ -44,22 +48,24 @@ export class MarketClient {
   /** `List.Orders` — accounts the user has purchased. */
   async listOrders(
     params: { page?: number; categoryId?: number } = {},
+    signal?: AbortSignal,
   ): Promise<RawOrdersResponse> {
     const search = new URLSearchParams();
     if (params.page) search.set('page', String(params.page));
     if (params.categoryId) search.set('category_id', String(params.categoryId));
-    return this.http.get('user/orders', { searchParams: search }).json<RawOrdersResponse>();
+    return this.http.get('user/orders', { searchParams: search, signal }).json<RawOrdersResponse>();
   }
 
   /** `List.User` — accounts the authenticated user owns (listings + purchases). */
   async listUser(
     params: { page?: number; categoryId?: number; show?: string } = {},
+    signal?: AbortSignal,
   ): Promise<RawOrdersResponse> {
     const search = new URLSearchParams();
     if (params.page) search.set('page', String(params.page));
     if (params.categoryId) search.set('category_id', String(params.categoryId));
     if (params.show) search.set('show', params.show);
-    return this.http.get('user/items', { searchParams: search }).json<RawOrdersResponse>();
+    return this.http.get('user/items', { searchParams: search, signal }).json<RawOrdersResponse>();
   }
 
   /** `Managing.Get` — full details for a single item (login/password/etc). */
@@ -85,6 +91,22 @@ export class MarketClient {
       .json<EmailCodeResponse>();
   }
 
+  async getLetters(params: {
+    emailPassword?: string;
+    email?: string;
+    password?: string;
+    limit?: number;
+  }): Promise<RawLettersResponse> {
+    const search = new URLSearchParams();
+    if (params.emailPassword) search.set('email_password', params.emailPassword);
+    if (params.email) search.set('email', params.email);
+    if (params.password) search.set('password', params.password);
+    if (params.limit) search.set('limit', String(params.limit));
+    return this.http
+      .get('letters2', { searchParams: search, throwHttpErrors: false })
+      .json<RawLettersResponse>();
+  }
+
   /** `Managing.Tag.Add` — attach one of the user's labels to the item. */
   async addItemTag(itemId: number, tagId: number): Promise<RawTagOpResponse> {
     return this.http
@@ -104,6 +126,42 @@ export class MarketClient {
     return this.http
       .put('me', { json: { user: { currency } }, throwHttpErrors: false })
       .json<RawEditMeResponse>();
+  }
+
+  /** `Market.UserTags.Get` — the user's own tag palette. */
+  async getUserTags(): Promise<RawUserTagsResponse> {
+    return this.http.get('user/tags', { throwHttpErrors: false }).json<RawUserTagsResponse>();
+  }
+
+  /** `Market.UserTags.Create` — create a new tag (title ≤16 chars, bc colour). */
+  async createUserTag(title: string, bc: string): Promise<RawUserTagResponse> {
+    return this.http
+      .post('user/tags', { json: { title, bc }, throwHttpErrors: false })
+      .json<RawUserTagResponse>();
+  }
+
+  /** `Market.UserTags.Update` — edit a custom tag (tag_id ≥ 4). */
+  async updateUserTag(tagId: number, title: string, bc: string): Promise<RawUserTagResponse> {
+    return this.http
+      .put('user/tags', { json: { tag_id: tagId, title, bc }, throwHttpErrors: false })
+      .json<RawUserTagResponse>();
+  }
+
+  /** `Market.UserTags.Delete` — delete a custom tag (also detaches it everywhere). */
+  async deleteUserTag(tagId: number): Promise<RawStatusResponse> {
+    return this.http
+      .delete('user/tags', { json: { tag_id: tagId }, throwHttpErrors: false })
+      .json<RawStatusResponse>();
+  }
+
+  /**
+   * `Market.UserTags.Order` — set the tag order. WARNING: any tag id NOT present
+   * in `tagOrder` is removed from the set, so always pass the complete list.
+   */
+  async reorderUserTags(tagOrder: number[]): Promise<RawStatusResponse> {
+    return this.http
+      .post('user/tags/order', { json: { tag_order: tagOrder }, throwHttpErrors: false })
+      .json<RawStatusResponse>();
   }
 
   /** Current authenticated user (market API — no avatar URL, only `avatar_date`). */

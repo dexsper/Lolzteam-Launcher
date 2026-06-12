@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type ViewId = 'inventory' | 'settings';
+export type ViewId = 'inventory' | 'mail' | 'settings';
 
 interface ViewState {
   view: ViewId;

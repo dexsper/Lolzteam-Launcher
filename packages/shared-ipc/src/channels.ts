@@ -7,6 +7,8 @@ import type {
   AuthStatus,
   AuthTokenPayload,
   LauncherSettings,
+  MailLettersRequest,
+  MailLettersResult,
   MarketCurrency,
   PickFileOptions,
   ProxyEntry,
@@ -19,7 +21,12 @@ export type LoginProgress = LoginProgressEvent & { itemId: number };
 
 export type TagOpResult = { ok: true } | { ok: false; message: string };
 
+export type LabelMutationResult =
+  | { ok: true; labels: UserLabel[] }
+  | { ok: false; message: string };
+
 export interface AccountsCategoryEvent {
+  streamId: number;
   serviceId: ServiceId;
   scope: AccountScope;
   items: AccountSummary[];
@@ -82,6 +89,12 @@ export const IPC_CHANNELS = {
   PROFILE_LABELS_GET: 'profile:labels-get',
   PROFILE_LABELS_REFRESH: 'profile:labels-refresh',
   PROFILE_SET_CURRENCY: 'profile:set-currency',
+  PROFILE_LABEL_CREATE: 'profile:label-create',
+  PROFILE_LABEL_UPDATE: 'profile:label-update',
+  PROFILE_LABEL_DELETE: 'profile:label-delete',
+  PROFILE_LABEL_REORDER: 'profile:label-reorder',
+
+  MAIL_GET_LETTERS: 'mail:get-letters',
 
   SETTINGS_GET: 'settings:get',
   SETTINGS_SET: 'settings:set',
@@ -124,7 +137,9 @@ export interface IpcRequestMap {
   [IPC_CHANNELS.AUTH_LOGOUT]: undefined;
   [IPC_CHANNELS.AUTH_GET_STATUS]: undefined;
   [IPC_CHANNELS.ACCOUNTS_LIST]: undefined;
-  [IPC_CHANNELS.ACCOUNTS_LIST_STREAM]: { only?: ServiceId; scope?: AccountScope } | undefined;
+  [IPC_CHANNELS.ACCOUNTS_LIST_STREAM]:
+    | { only?: ServiceId; scope?: AccountScope; streamId?: number }
+    | undefined;
   [IPC_CHANNELS.ACCOUNTS_REFRESH]: undefined;
   [IPC_CHANNELS.ACCOUNTS_CLEAR_CACHE]: undefined;
   [IPC_CHANNELS.ACCOUNTS_GET]: { itemId: number };
@@ -141,6 +156,11 @@ export interface IpcRequestMap {
   [IPC_CHANNELS.PROFILE_LABELS_GET]: undefined;
   [IPC_CHANNELS.PROFILE_LABELS_REFRESH]: undefined;
   [IPC_CHANNELS.PROFILE_SET_CURRENCY]: { currency: MarketCurrency };
+  [IPC_CHANNELS.PROFILE_LABEL_CREATE]: { title: string; bc: string };
+  [IPC_CHANNELS.PROFILE_LABEL_UPDATE]: { tagId: number; title: string; bc: string };
+  [IPC_CHANNELS.PROFILE_LABEL_DELETE]: { tagId: number };
+  [IPC_CHANNELS.PROFILE_LABEL_REORDER]: { tagIds: number[] };
+  [IPC_CHANNELS.MAIL_GET_LETTERS]: MailLettersRequest;
   [IPC_CHANNELS.SETTINGS_GET]: undefined;
   [IPC_CHANNELS.SETTINGS_SET]: Partial<LauncherSettings>;
   [IPC_CHANNELS.SETTINGS_PICK_FILE]: PickFileOptions;
@@ -184,6 +204,11 @@ export interface IpcResponseMap {
   [IPC_CHANNELS.PROFILE_LABELS_GET]: UserLabel[];
   [IPC_CHANNELS.PROFILE_LABELS_REFRESH]: UserLabel[];
   [IPC_CHANNELS.PROFILE_SET_CURRENCY]: { ok: boolean; message?: string };
+  [IPC_CHANNELS.PROFILE_LABEL_CREATE]: LabelMutationResult;
+  [IPC_CHANNELS.PROFILE_LABEL_UPDATE]: LabelMutationResult;
+  [IPC_CHANNELS.PROFILE_LABEL_DELETE]: LabelMutationResult;
+  [IPC_CHANNELS.PROFILE_LABEL_REORDER]: LabelMutationResult;
+  [IPC_CHANNELS.MAIL_GET_LETTERS]: MailLettersResult;
   [IPC_CHANNELS.SETTINGS_GET]: SettingsResponse;
   [IPC_CHANNELS.SETTINGS_SET]: SettingsResponse;
   [IPC_CHANNELS.SETTINGS_PICK_FILE]: string | null;

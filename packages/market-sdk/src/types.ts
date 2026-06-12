@@ -155,3 +155,55 @@ export interface RawEditMeResponse {
   errors?: string[] | string;
   [key: string]: unknown;
 }
+
+export interface RawUserTag {
+  tag_id: number;
+  title: string;
+  bc?: string;
+  forOwnedAccountsOnly?: boolean;
+  isDefault?: boolean;
+}
+
+export interface RawUserTagsResponse {
+  tags?: RawUserTag[];
+  errors?: string[] | string;
+  [key: string]: unknown;
+}
+
+export interface RawUserTagResponse {
+  tag?: RawUserTag | null;
+  errors?: string[] | string;
+  [key: string]: unknown;
+}
+
+export interface RawStatusResponse {
+  status?: string;
+  message?: string;
+  errors?: string[] | string;
+  [key: string]: unknown;
+}
+
+export interface RawLetter {
+  id?: number | string;
+  subject?: string;
+  title?: string;
+  from?: string;
+  sender?: string;
+  to?: string;
+  date?: number | string;
+  timestamp?: number | string;
+  textPlain?: string;
+  text?: string;
+  body?: string;
+  textHtml?: string;
+  html?: string;
+  [key: string]: unknown;
+}
+
+export interface RawLettersResponse {
+  letters?: RawLetter[];
+  items?: RawLetter[];
+  error?: string;
+  errors?: string[] | string;
+  [key: string]: unknown;
+}

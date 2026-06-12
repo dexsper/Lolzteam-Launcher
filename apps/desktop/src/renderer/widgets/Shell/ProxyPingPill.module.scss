@@ -1,0 +1,77 @@
+.pill {
+  @include button-reset;
+  @include clickable;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: $color-text-muted;
+  padding: 4px 8px;
+  border-radius: $radius-pill;
+  background: $color-surface-overlay;
+  border: 1px solid $color-border;
+  transition: color 120ms ease, background 120ms ease, border-color 120ms ease;
+
+  &:hover:not(:disabled) {
+    color: $color-text;
+    background: $color-surface-raised;
+    border-color: $color-border-strong;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.icon {
+  color: $color-text-muted;
+  flex-shrink: 0;
+}
+
+.spin {
+  animation: proxy-ping-spin 0.9s linear infinite;
+  flex-shrink: 0;
+}
+
+.label {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dotOk {
+  background: #1ea360;
+}
+
+.dotFail {
+  background: #e5484d;
+}
+
+.dotChecking {
+  background: $color-text-muted;
+}
+
+.value {
+  color: $color-text-soft;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes proxy-ping-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

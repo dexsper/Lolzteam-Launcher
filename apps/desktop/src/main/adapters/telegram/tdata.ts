@@ -4,10 +4,7 @@ import type { StringSessionData } from '@mtcute/node/utils.js';
 
 export type TdataSession = string | StringSessionData;
 
-// Telegram Desktop (free tier) shows at most 3 accounts; extra entries written
-// into tdata are simply ignored by the client. Cap to the same number so the
-// oldest account is evicted instead of silently dropped by TDesktop.
-const MAX_ACCOUNTS = 3;
+export const MAX_ACCOUNTS = 3;
 
 // A session string carries the same data as StringSessionData; normalize so we
 // can inspect `self.userId` for dedup before writing.
@@ -50,15 +47,18 @@ export const readExistingSessions = async (
 
 // Pure: put the freshly-logged-in account first (it becomes active), drop any
 // prior entry for the same user, and cap the total. Offline auth_key sessions
-// have no `self`, so they can't be deduped — they're just prepended.
+// have no `self`, so they can't be deduped — they're just prepended. `max <= 0`
+// keeps every account (third-party clients like AyuGram support more than 3/4).
 export const mergeSessions = (
   incoming: StringSessionData,
   existing: StringSessionData[],
+  max = MAX_ACCOUNTS,
 ): StringSessionData[] => {
   const incomingId = incoming.self?.userId ?? null;
   const kept =
     incomingId === null ? existing : existing.filter((s) => s.self?.userId !== incomingId);
-  return [incoming, ...kept].slice(0, MAX_ACCOUNTS);
+  const merged = [incoming, ...kept];
+  return max > 0 ? merged.slice(0, max) : merged;
 };
 
 // Accepts either a single session (string or StringSessionData) or an array.

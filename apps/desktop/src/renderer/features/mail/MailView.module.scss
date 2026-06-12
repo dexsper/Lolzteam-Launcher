@@ -1,0 +1,340 @@
+.container {
+  padding: 0 24px 24px 24px;
+}
+
+.block {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.section {
+  background-color: #1f1f1f;
+  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 4px;
+}
+
+.prefix {
+  padding: 16px 20px 8px 20px;
+  color: #949494;
+  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.sectionBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 20px 12px 20px;
+}
+
+.hint {
+  font-size: 14px;
+  color: #949494;
+}
+
+.formRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.input {
+  flex: 1;
+  min-width: 220px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #161616;
+  border: 1px solid $color-border;
+  color: $color-text;
+  font-size: 14px;
+
+  &::placeholder {
+    color: $color-text-muted;
+  }
+
+  &:hover {
+    border-color: $color-border-strong;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.fetchBtn {
+  @include button-reset;
+  @include clickable;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #06170f;
+  background: $color-accent;
+  transition: filter $duration-fast $ease-out, opacity $duration-fast $ease-out;
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.08);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+// --- History / settings-style rows ------------------------------------------
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 4px;
+  padding-right: 8px;
+  border-radius: 20px;
+  transition: background 0.1s ease-in-out;
+
+  &:hover {
+    background-color: #282828;
+  }
+}
+
+.rowMain {
+  @include button-reset;
+  @include clickable;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px;
+  border-radius: 20px;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.rowIcon {
+  color: #949494;
+  flex-shrink: 0;
+}
+
+.rowLabel {
+  font-size: 14px;
+  color: $color-text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowRemove {
+  @include button-reset;
+  @include clickable;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  color: $color-text-muted;
+  transition: background $duration-fast $ease-out, color $duration-fast $ease-out;
+
+  &:hover {
+    color: #ff6b6b;
+    background: #c0392b1f;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+// --- States -----------------------------------------------------------------
+
+.error {
+  margin: 0;
+  font-size: 14px;
+  color: #ff6b6b;
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 0;
+  color: #6f6f6f;
+  font-size: 14px;
+  text-align: center;
+}
+
+.stateIcon {
+  color: #4a4a4a;
+}
+
+// --- Letters ----------------------------------------------------------------
+
+.letterList {
+  list-style: none;
+  margin: 0;
+  padding: 0 4px 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.letter {
+  border-radius: 16px;
+  background: #161616;
+  overflow: hidden;
+}
+
+.letterOpen {
+  background: #181818;
+}
+
+.letterHead {
+  @include button-reset;
+  @include clickable;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  text-align: left;
+  background-color: #282828;
+  transition: background 0.1s ease-in-out;
+
+  &:hover {
+    background: #303030;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.letterMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.letterFrom {
+  font-size: 13px;
+  font-weight: 600;
+  color: $color-text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.letterPreview {
+  font-size: 13px;
+  color: #9a9a9a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.letterDate {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #6f6f6f;
+  font-variant-numeric: tabular-nums;
+}
+
+.letterChevron {
+  flex-shrink: 0;
+  color: $color-text-muted;
+  transition: transform $duration-fast $ease-out;
+}
+
+.letterChevronOpen {
+  transform: rotate(180deg);
+}
+
+.letterBody {
+  padding: 4px 14px 16px 14px;
+  border-top: 1px solid #363636;
+  max-height: 420px;
+  overflow: auto;
+  background-color: #282828;
+  @include scrollbar;
+}
+
+.bodyText {
+  margin: 12px 0 0 0;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  color: $color-text-soft;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.link {
+  color: $color-accent;
+  cursor: pointer;
+  word-break: break-all;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.bodyHtml {
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: $color-text-soft;
+  word-break: break-word;
+
+  :global(a) {
+    color: $color-accent;
+  }
+
+  :global(img) {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+.spin {
+  animation: mail-spin 1s linear infinite;
+}
+
+@keyframes mail-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

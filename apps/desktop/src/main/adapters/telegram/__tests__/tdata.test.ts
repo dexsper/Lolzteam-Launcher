@@ -34,4 +34,14 @@ describe('mergeSessions', () => {
     const merged = mergeSessions(session(null), [session(1), session(2)]);
     expect(ids(merged)).toEqual([null, 1, 2]);
   });
+
+  it('respects a custom cap (4 for Premium)', () => {
+    const merged = mergeSessions(session(5), [session(1), session(2), session(3), session(4)], 4);
+    expect(ids(merged)).toEqual([5, 1, 2, 3]);
+  });
+
+  it('keeps every account when the cap is 0 (no limit)', () => {
+    const merged = mergeSessions(session(5), [session(1), session(2), session(3), session(4)], 0);
+    expect(ids(merged)).toEqual([5, 1, 2, 3, 4]);
+  });
 });

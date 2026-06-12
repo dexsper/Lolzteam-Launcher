@@ -1,4 +1,4 @@
-import { Boxes, Settings, ShoppingBag, Wallet } from 'lucide-react';
+import { Boxes, Mail, Settings } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { type ViewId, useView } from '~/stores/view';
 import s from './Sidebar.module.scss';
@@ -12,8 +12,7 @@ interface NavItem {
 
 const NAV: readonly NavItem[] = [
   { id: 'inventory', labelKey: 'sidebar.inventory', icon: Boxes, view: 'inventory' },
-  { id: 'market', labelKey: 'sidebar.market', icon: ShoppingBag },
-  { id: 'wallet', labelKey: 'sidebar.wallet', icon: Wallet },
+  { id: 'mail', labelKey: 'sidebar.mail', icon: Mail, view: 'mail' },
   { id: 'settings', labelKey: 'sidebar.settings', icon: Settings, view: 'settings' },
 ] as const;
 

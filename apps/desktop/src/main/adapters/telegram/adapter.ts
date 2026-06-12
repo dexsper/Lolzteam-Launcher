@@ -111,11 +111,13 @@ export const telegramAdapter: ServiceAdapter = {
     }
     // Preserve previously added accounts: read what's already in tdata, drop any
     // stale entry for this same user, prepend the new session (it becomes active)
-    // and cap the total. Falls back to a single-account write if the existing
+    // and cap the total to the user-chosen limit (default 3; 0 = no limit for
+    // third-party clients). Falls back to a single-account write if the existing
     // tdata can't be read (passcode/corruption/version), matching old behaviour.
+    const maxAccounts = ctx.settings?.telegramMaxAccounts ?? 3;
     const incoming = toSessionData(session);
     const existing = await readExistingSessions(tdataDir, ctx.log);
-    const merged = mergeSessions(incoming, existing);
+    const merged = mergeSessions(incoming, existing, maxAccounts);
     ctx.log.info(`[telegram] writing tdata to ${tdataDir}: ${merged.length} account(s) (offline)`);
     try {
       await rm(stagingDir, { recursive: true, force: true });

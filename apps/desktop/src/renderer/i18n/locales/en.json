@@ -17,9 +17,30 @@
   },
   "sidebar": {
     "inventory": "My accounts",
-    "market": "Market",
-    "wallet": "Wallet",
+    "mail": "Mail",
     "settings": "Settings"
+  },
+  "mail": {
+    "title": "Mail",
+    "subtitle": "View an account's mailbox by its login and password",
+    "placeholder": "email:password",
+    "history": "Mail history",
+    "removeFromHistory": "Remove from history",
+    "lettersTitle": "Letters ({{count}})",
+    "fetch": "Get letters",
+    "loading": "Loading…",
+    "loadingHint": "Fetching letters, this may take a few seconds…",
+    "idle": "Enter email:password and press \"Get letters\"",
+    "empty": "No letters found",
+    "invalidInput": "Enter credentials in email:password format",
+    "unknownSender": "Unknown sender",
+    "noPreview": "(no text)",
+    "error": {
+      "not_authenticated": "Sign in to your account first",
+      "invalid_credentials": "Enter credentials in email:password format",
+      "retry_request": "The server didn't respond in time, try again",
+      "letters_failed": "Failed to fetch letters"
+    }
   },
   "topbar": {
     "title": "My accounts",
@@ -29,7 +50,10 @@
     "loadingAccounts": "Loading your accounts",
     "loadingCategory": "Loading {{service}} · {{count}} loaded",
     "loadingCategoryPage": "Loading {{service}} · page {{page}}/{{total}} · {{count}} loaded",
-    "loggingIn": "Signing in"
+    "loggingIn": "Signing in",
+    "proxyDirect": "Ping",
+    "pingFail": "failed",
+    "proxyRefresh": "Refresh ping"
   },
   "login": {
     "title": "Authorization",
@@ -51,7 +75,8 @@
     "title": "No connection to the API",
     "subtitle": "Can't reach the API. Check your internet or use a VPN — lzt.market may be blocked by your ISP. Then press \"Retry\".",
     "retry": "Retry",
-    "retrying": "Connecting…"
+    "retrying": "Connecting…",
+    "proxy": "Configure proxy"
   },
   "loginSteps": {
     "fetchingCredentials": "Fetching account data",
@@ -199,13 +224,28 @@
       "title": "Profile",
       "back": "Back",
       "labelsMenu": "Labels",
-      "labelsMenuHint": "Profile labels for your accounts",
+      "labelsMenuHint": "Create and edit your profile labels",
       "labelsTitle": "Labels",
-      "labelsHint": "Labels from your lzt.market profile. Attach them to accounts from the card.",
-      "refresh": "Refresh labels",
+      "labelsHint": "Create labels and attach them to accounts from the card.",
+      "refresh": "Refresh",
       "loading": "Loading labels…",
-      "empty": "No labels yet. Create them on the website and press \"Refresh labels\".",
-      "webOnlyHint": "Labels themselves can only be created or deleted on the website."
+      "empty": "No labels yet. Create your first one.",
+      "labelNew": "Create",
+      "labelEdit": "Edit label",
+      "labelDelete": "Delete label",
+      "labelDeleteConfirm": "Delete the label \"{{title}}\"? It will also be removed from all your accounts.",
+      "labelDeleteFailed": "Couldn't delete the label",
+      "labelSaveFailed": "Couldn't save the label",
+      "labelTitle": "Title",
+      "labelTitlePlaceholder": "Label",
+      "labelColor": "Colour",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "labelLocked": "This label can't be changed",
+      "labelDefault": "Default",
+      "cancel": "Cancel",
+      "save": "Save",
+      "labelManageHint": "System labels can't be changed. Up to 200 labels."
     },
     "currency": {
       "menuLabel": "Currency",
@@ -240,7 +280,10 @@
       "alert": "A separate client is recommended — a portable build or fork, not your main Telegram.",
       "clear": "Reset",
       "releaseLabel": "Latest Telegram Desktop release",
-      "releaseHint": "Open the GitHub release page — portable builds and installers"
+      "releaseHint": "Open the GitHub release page — portable builds and installers",
+      "accountsLabel": "Account limit",
+      "accountsHint": "The official client shows at most 3 accounts (4 with Premium).",
+      "accountsUnlimited": "No limit"
     },
     "language": {
       "title": "Language",
@@ -269,6 +312,10 @@
       "menuLabel": "Proxy",
       "menuHint": "HTTP proxy list and pick-on-login",
       "back": "Back",
+      "appLabel": "App proxy",
+      "appHint": "Routes lzt.market API requests and the sign-in window. Helps when the site is blocked.",
+      "appNone": "No proxy (direct)",
+      "addInvalid": "Invalid proxy format",
       "toggleLabel": "Use proxy",
       "toggleHint": "When signing in you'll be able to pick a proxy from the list",
       "servicesLabel": "Services using proxy",

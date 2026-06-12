@@ -23,6 +23,11 @@ export interface UserLabel {
   forOwnedAccountsOnly: boolean;
 }
 
+export const PROTECTED_LABEL_IDS: readonly number[] = [4, 5, 6];
+
+export const isEditableLabel = (label: Pick<UserLabel, 'id' | 'isDefault'>): boolean =>
+  label.id >= 4 && !label.isDefault && !PROTECTED_LABEL_IDS.includes(label.id);
+
 export type MarketCurrency =
   | 'rub'
   | 'uah'

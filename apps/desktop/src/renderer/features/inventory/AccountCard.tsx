@@ -118,11 +118,15 @@ const countryName = (code: string, locale: string): string => {
 
 const formatPrice = (value: number, currency: string, locale: string) => {
   const intlLocale = locale === 'ru' ? 'ru-RU' : 'en-US';
+  // Show cents only when the amount actually has a fractional part (e.g. USD
+  // "$0.49"); whole amounts stay clean ("150 ₽") instead of forcing ".00".
+  const fractionDigits = Number.isInteger(value) ? 0 : 2;
   try {
     return new Intl.NumberFormat(intlLocale, {
       style: 'currency',
       currency,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
     }).format(value);
   } catch {
     return `${value} ${currency}`;

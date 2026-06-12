@@ -24,13 +24,23 @@ const registerProxyCreds = (
   }
 };
 
+export const proxyLoginFor = (host: string, port: number): ProxyCreds | null =>
+  credsByHostPort.get(hostPortKey(host, port)) ?? null;
+
+export const syncProxyCreds = (proxies: ProxyEntry[]): void => {
+  credsByHostPort.clear();
+  for (const p of proxies) registerProxyCreds(p);
+};
+
 export const applyProxyToSession = async (ses: Session, entry: ProxyEntry): Promise<void> => {
   registerProxyCreds(entry);
   await ses.setProxy({ proxyRules: proxyRulesFor(entry) });
+  await ses.closeAllConnections();
 };
 
 export const clearProxyFromSession = async (ses: Session): Promise<void> => {
   await ses.setProxy({ mode: 'direct' });
+  await ses.closeAllConnections();
 };
 
 let authHandlerWired = false;
@@ -56,7 +66,6 @@ export const testProxy = (
 ): Promise<ProxyTestResult> => {
   return new Promise<ProxyTestResult>((resolve) => {
     const ses = session.fromPartition(`proxy-test-${randomUUID()}`);
-    registerProxyCreds(input);
 
     let settled = false;
     const finish = (result: ProxyTestResult) => {

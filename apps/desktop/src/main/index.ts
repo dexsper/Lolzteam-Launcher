@@ -13,6 +13,7 @@ import { registerProfileIpc } from './ipc/profile';
 import { registerProxyIpc } from './ipc/proxy';
 import { registerSettingsIpc } from './ipc/settings';
 import { registerSteamIpc } from './ipc/steam';
+import { initAppProxy } from './services/api-session';
 import { registerProxyAuthHandler } from './services/proxy';
 import { registerUpdaterIpc } from './updater';
 import { createMainWindow, getMainWindow } from './window/main-window';
@@ -57,6 +58,9 @@ app.whenReady().then(async () => {
   await bootstrap();
   await registerProtocol(LOLZ_CONFIG.protocolScheme);
 
+  registerProxyAuthHandler();
+  await initAppProxy();
+
   const win = createMainWindow();
   handleDeepLink = registerAuthFlow(() => getMainWindow());
   registerInAppAuth(() => getMainWindow());
@@ -68,7 +72,6 @@ app.whenReady().then(async () => {
   registerSettingsIpc();
   registerSteamIpc();
   registerProxyIpc();
-  registerProxyAuthHandler();
   registerUpdaterIpc();
 
   consumeDeepLinks(process.argv);

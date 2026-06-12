@@ -224,6 +224,20 @@
     .langOptionActive {
       color: #1EA360;
     }
+
+    .langOptionMain {
+      display: inline-flex;
+      align-items: center;
+      gap: $space-2;
+      min-width: 0;
+    }
+
+    .langFlag {
+      width: 18px;
+      height: auto;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
   }
 
   .version {

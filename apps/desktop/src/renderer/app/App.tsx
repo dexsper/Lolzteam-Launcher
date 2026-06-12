@@ -5,6 +5,7 @@ import { ConnectionScreen } from '~/features/auth/ConnectionScreen';
 import { LoginScreen } from '~/features/auth/LoginScreen';
 import { InventoryView } from '~/features/inventory/InventoryView';
 import { LoginProgressModal } from '~/features/inventory/LoginProgressModal';
+import { MailView } from '~/features/mail/MailView';
 import { SettingsView } from '~/features/settings/SettingsView';
 import { useLocaleSync } from '~/i18n/useLocaleSync';
 import { useAccountsStream, useAccountsStreamController } from '~/stores/accountsStream';
@@ -87,7 +88,13 @@ export const App = () => {
     content = (
       <Shell session={current.session}>
         <AccountsStreamController />
-        {view === 'settings' ? <SettingsView /> : <InventoryView />}
+        {view === 'settings' ? (
+          <SettingsView />
+        ) : view === 'mail' ? (
+          <MailView />
+        ) : (
+          <InventoryView />
+        )}
         <LoginProgressModal />
       </Shell>
     );

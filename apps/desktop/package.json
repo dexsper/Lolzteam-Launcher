@@ -1,6 +1,6 @@
 {
   "name": "@lolzteam/desktop",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "private": true,
   "description": "Lolzteam Launcher — desktop app",
   "type": "module",
@@ -82,7 +82,9 @@
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "installerIcon": "build/icon.ico",
-      "uninstallerIcon": "build/icon.ico"
+      "uninstallerIcon": "build/icon.ico",
+      "installerSidebar": "build/installerSidebar.bmp",
+      "uninstallerSidebar": "build/uninstallerSidebar.bmp"
     },
     "protocols": [
       {

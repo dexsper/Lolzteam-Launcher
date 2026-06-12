@@ -1,9 +1,12 @@
 import type { LocalePreference } from '@shared-types';
-import { Check, ExternalLink, Languages, Loader2, Wifi, WifiOff } from 'lucide-react';
+import { Check, ExternalLink, Globe, Languages, Loader2, Wifi, WifiOff } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import backgroundUrl from '~/assets/background.svg';
 import logoUrl from '~/assets/logolzt.svg';
+import { LOCALE_FLAG } from '~/lib/flags';
+import { Flag } from '~/widgets/Flag/Flag';
+import { AppProxyModal } from './AppProxyModal';
 import s from './LoginScreen.module.scss';
 
 const LOCALE_OPTIONS: readonly LocalePreference[] = ['ru', 'en'] as const;
@@ -16,6 +19,7 @@ export const LoginScreen = () => {
   const [version, setVersion] = useState('');
   const [locale, setLocale] = useState<LocalePreference>('ru');
   const [langOpen, setLangOpen] = useState(false);
+  const [proxyOpen, setProxyOpen] = useState(false);
   const [net, setNet] = useState<NetState>({ kind: 'checking' });
   const langRef = useRef<HTMLDivElement>(null);
 
@@ -117,6 +121,14 @@ export const LoginScreen = () => {
               <ExternalLink size={16} />
               <span>{busy === 'browser' ? t('login.busyBrowser') : t('login.openBrowser')}</span>
             </button>
+            <button
+              type="button"
+              className={s.langButton}
+              aria-label={t('settings.proxy.appLabel')}
+              onClick={() => setProxyOpen(true)}
+            >
+              <Globe size={18} />
+            </button>
             <div className={s.langWrap} ref={langRef}>
               <button
                 type="button"
@@ -141,7 +153,10 @@ export const LoginScreen = () => {
                         className={`${s.langOption} ${active ? s.langOptionActive : ''}`}
                         onClick={() => pickLocale(opt)}
                       >
-                        <span>{t(`settings.language.${opt}`)}</span>
+                        <span className={s.langOptionMain}>
+                          <Flag code={LOCALE_FLAG[opt]} className={s.langFlag} />
+                          <span>{t(`settings.language.${opt}`)}</span>
+                        </span>
                         {active && <Check size={16} />}
                       </button>
                     );
@@ -154,6 +169,8 @@ export const LoginScreen = () => {
 
         {version && <span className={s.version}>v{version}</span>}
       </div>
+
+      {proxyOpen && <AppProxyModal onClose={() => setProxyOpen(false)} onChanged={checkNetwork} />}
     </>
   );
 };

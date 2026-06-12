@@ -15,6 +15,7 @@ import { useView } from '~/stores/view';
 import { ChangelogModal } from '~/widgets/Changelog/ChangelogModal';
 import { Flag } from '~/widgets/Flag/Flag';
 import { Tooltip } from '~/widgets/Tooltip/Tooltip';
+import { ProxyPingPill } from './ProxyPingPill';
 import s from './TopBar.module.scss';
 
 interface TopBarProps {
@@ -33,17 +34,13 @@ const formatBalance = (balance: number | null, currency: string | null, locale: 
   if (balance === null) return null;
   const intlLocale = locale === 'ru' ? 'ru-RU' : 'en-US';
   if (currency) {
-    // Render the currency symbol with locale-correct placement (e.g. "$7,979.20",
-    // "7 979,20 ₽") via ISO-4217 currency formatting.
     try {
       return new Intl.NumberFormat(intlLocale, {
         style: 'currency',
         currency,
         maximumFractionDigits: 2,
       }).format(balance);
-    } catch {
-      // Unknown/invalid currency code — fall through to a plain number + code.
-    }
+    } catch {}
   }
   const formatted = new Intl.NumberFormat(intlLocale, { maximumFractionDigits: 2 }).format(balance);
   return `${formatted} ${currency ?? ''}`.trim();
@@ -114,7 +111,14 @@ export const TopBar = ({ session }: TopBarProps) => {
   return (
     <header className={s.topbar}>
       <div className={s.brand}>
-        <img className={s.brandLogo} src={logoUrl} aria-hidden alt="Lolzteam" />
+        <button
+          type="button"
+          className={s.brandLogoButton}
+          onClick={() => setView('inventory')}
+          aria-label={t('topbar.title')}
+        >
+          <img className={s.brandLogo} src={logoUrl} aria-hidden alt="Lolzteam" />
+        </button>
         {version && (
           <Tooltip label={t('changelog.title')} placement="bottom">
             <button type="button" className={s.versionPill} onClick={() => setChangelogOpen(true)}>
@@ -122,6 +126,7 @@ export const TopBar = ({ session }: TopBarProps) => {
             </button>
           </Tooltip>
         )}
+        <ProxyPingPill />
       </div>
 
       {loadingText && (

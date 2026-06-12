@@ -1,6 +1,15 @@
 import type { AccountScope, AccountSummary, LauncherSettings, ServiceId } from '@shared-types';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertCircle, ArrowDownUp, Check, ListFilter, RefreshCw, Search, X } from 'lucide-react';
+import {
+  AlertCircle,
+  ArrowDownUp,
+  Check,
+  Inbox,
+  ListFilter,
+  RefreshCw,
+  Search,
+  X,
+} from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { matchesLabelFilters } from '~/lib/labelFilter';
@@ -222,9 +231,8 @@ export const InventoryView = () => {
     () => items.filter((it) => (it.scope ?? 'purchased') === scope),
     [items, scope],
   );
-  // Lazily stream the listed scope the first time it's opened (purchased loads
-  // on mount via the stream controller).
   useEffect(() => {
+    useAccountsStream.getState().setActiveScope(scope);
     if (!isScopeLoaded(loaded, scope) && !streaming) startAccountsStream(undefined, scope);
   }, [scope, loaded, streaming]);
 
@@ -306,8 +314,10 @@ export const InventoryView = () => {
   if (query.isError && rawItems.length === 0) {
     return (
       <div className={s.state}>
-        <AlertCircle size={28} className={s.danger} />
-        <p>{t('inventory.error')}</p>
+        <div className={`${s.stateBadge} ${s.stateBadgeDanger}`}>
+          <AlertCircle size={26} />
+        </div>
+        <p className={s.stateText}>{t('inventory.error')}</p>
         <button type="button" className={s.retry} onClick={() => query.refetch()}>
           {t('common.retry')}
         </button>
@@ -318,7 +328,10 @@ export const InventoryView = () => {
   if (scope === 'purchased' && rawItems.length === 0 && fullySettled) {
     return (
       <div className={s.state}>
-        <p>{t('inventory.empty')}</p>
+        <div className={s.stateBadge}>
+          <Inbox size={26} />
+        </div>
+        <p className={s.stateText}>{t('inventory.empty')}</p>
         <button
           type="button"
           className={s.retry}
@@ -333,7 +346,10 @@ export const InventoryView = () => {
   if (scope === 'purchased' && items.length === 0 && fullySettled) {
     return (
       <div className={s.state}>
-        <p>{t('inventory.emptyUnsupported')}</p>
+        <div className={s.stateBadge}>
+          <Inbox size={26} />
+        </div>
+        <p className={s.stateText}>{t('inventory.emptyUnsupported')}</p>
         <button
           type="button"
           className={s.retry}
@@ -504,10 +520,12 @@ export const InventoryView = () => {
         </div>
       ) : visible.length === 0 ? (
         <div className={s.noResults}>
-          <Search size={24} className={s.noResultsIcon} />
+          <div className={s.stateBadge}>
+            <Search size={24} />
+          </div>
           {scope === 'listed' && scopedItems.length === 0 ? (
             <>
-              <p>{t('inventory.scope.emptyListed')}</p>
+              <p className={s.stateText}>{t('inventory.scope.emptyListed')}</p>
               <button
                 type="button"
                 className={s.retry}
@@ -517,7 +535,7 @@ export const InventoryView = () => {
               </button>
             </>
           ) : (
-            <p>{t('inventory.noResults')}</p>
+            <p className={s.stateText}>{t('inventory.noResults')}</p>
           )}
         </div>
       ) : (

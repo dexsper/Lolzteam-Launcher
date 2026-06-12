@@ -1,11 +1,12 @@
 import { IPC_CHANNELS, LOLZ_CONFIG } from '@shared-ipc';
 import { BrowserWindow, ipcMain } from 'electron';
+import { APP_PARTITION } from '../services/api-session';
 import { MAIN_COLORS } from '../theme';
 import { acceptAuthCallback, clearAuthSession, issueState } from './auth-broker';
 
 type GetWindow = () => BrowserWindow | null;
 
-const AUTH_PARTITION = 'persist:lolz-auth';
+const AUTH_PARTITION = APP_PARTITION;
 const REDIRECT_SCHEMES = [`${LOLZ_CONFIG.protocolScheme}://`, 'lzt://'];
 
 let authWindow: BrowserWindow | null = null;
@@ -80,6 +81,7 @@ const openAuthWindow = async (getMainWindow: GetWindow) => {
 
   authWindow.on('closed', () => {
     authWindow = null;
+    void clearAuthSession(AUTH_PARTITION);
   });
 
   await authWindow.loadURL(authUrl);

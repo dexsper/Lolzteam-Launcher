@@ -1,8 +1,19 @@
 import type { LauncherSettings, ProxyEntry, ProxyTestResult, ServiceId } from '@shared-types';
 import { PROXY_CAPABLE_SERVICES } from '@shared-types';
-import { ArrowLeft, Check, Loader2, Pencil, Plus, ShieldCheck, Trash2, Wifi } from 'lucide-react';
+import {
+  ArrowLeft,
+  Check,
+  ChevronDown,
+  Loader2,
+  Pencil,
+  Plus,
+  ShieldCheck,
+  Trash2,
+  Wifi,
+} from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { parseProxyLine, proxyKey } from '~/lib/proxy';
 import { formatAgo } from '~/lib/time';
 import { Modal } from '~/widgets/Modal/Modal';
 import { Tooltip } from '~/widgets/Tooltip/Tooltip';
@@ -20,25 +31,6 @@ interface ProxyViewProps {
   onBack: () => void;
 }
 
-const proxyKey = (p: Pick<ProxyEntry, 'host' | 'port' | 'username' | 'password'>): string =>
-  `${p.host}:${p.port}:${p.username ?? ''}:${p.password ?? ''}`;
-
-const parseProxyLine = (line: string): Omit<ProxyEntry, 'id'> | null => {
-  const parts = line.trim().split(':');
-  if (parts.length < 2) return null;
-  // Passwords may contain ':' — everything after the username is the password.
-  const [host, portRaw, username, ...rest] = parts;
-  const password = rest.length > 0 ? rest.join(':') : undefined;
-  const port = Number(portRaw);
-  if (!host || !Number.isInteger(port) || port <= 0 || port > 65535) return null;
-  return {
-    host,
-    port,
-    ...(username ? { username } : {}),
-    ...(password ? { password } : {}),
-  };
-};
-
 export const ProxyView = ({ onBack }: ProxyViewProps) => {
   const { t, i18n } = useTranslation();
   const [settings, setSettings] = useState<LauncherSettings | null>(null);
@@ -51,7 +43,20 @@ export const ProxyView = ({ onBack }: ProxyViewProps) => {
   // single persist at the end (keeps the list responsive without N disk writes).
   const [bulkCheck, setBulkCheck] = useState<{ done: number; total: number } | null>(null);
   const [liveResults, setLiveResults] = useState<Record<string, ProxyTestResult>>({});
+  const [appSelectOpen, setAppSelectOpen] = useState(false);
+  const appSelectRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (!appSelectOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (appSelectRef.current && !appSelectRef.current.contains(e.target as Node)) {
+        setAppSelectOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [appSelectOpen]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: `bulk` is the textarea content — re-measure on change
   useLayoutEffect(() => {
@@ -78,9 +83,16 @@ export const ProxyView = ({ onBack }: ProxyViewProps) => {
   const proxies = settings?.proxies ?? [];
   const proxyEnabled = settings?.proxyEnabled ?? false;
   const proxyServices = settings?.proxyServices ?? [];
+  const appProxyId = settings?.appProxyId ?? null;
 
   const proxiesRef = useRef<ProxyEntry[]>(proxies);
   proxiesRef.current = proxies;
+
+  useEffect(() => {
+    if (settings && appProxyId && !proxies.some((p) => p.id === appProxyId)) {
+      void persist({ appProxyId: null });
+    }
+  }, [settings, appProxyId, proxies]);
 
   const persist = async (patch: Partial<LauncherSettings>) => {
     const next = await window.launcher.settings.set(patch);
@@ -94,6 +106,8 @@ export const ProxyView = ({ onBack }: ProxyViewProps) => {
   };
 
   const toggleEnabled = () => void persist({ proxyEnabled: !proxyEnabled });
+
+  const setAppProxy = (id: string | null) => void persist({ appProxyId: id });
 
   const toggleService = (id: ServiceId) => {
     const next = proxyServices.includes(id)
@@ -229,6 +243,72 @@ export const ProxyView = ({ onBack }: ProxyViewProps) => {
           </button>
           <span className={s.headerTitle}>{t('settings.proxy.menuLabel')}</span>
         </header>
+
+        <div className={s.appProxyBlock}>
+          <div className={s.text}>
+            <span className={s.title}>{t('settings.proxy.appLabel')}</span>
+            <span className={s.description}>{t('settings.proxy.appHint')}</span>
+          </div>
+          <div className={s.appSelect} ref={appSelectRef}>
+            <button
+              type="button"
+              className={s.appSelectTrigger}
+              aria-haspopup="listbox"
+              aria-expanded={appSelectOpen}
+              onClick={() => setAppSelectOpen((v) => !v)}
+            >
+              <span className={s.appSelectValue}>
+                {appProxyId
+                  ? (() => {
+                      const p = proxies.find((x) => x.id === appProxyId);
+                      return p
+                        ? `${p.host}:${p.port}${p.username ? ` · ${p.username}` : ''}`
+                        : t('settings.proxy.appNone');
+                    })()
+                  : t('settings.proxy.appNone')}
+              </span>
+              <ChevronDown
+                size={16}
+                className={`${s.appSelectChevron} ${appSelectOpen ? s.appSelectChevronOpen : ''}`}
+              />
+            </button>
+            {appSelectOpen && (
+              <div className={s.appSelectMenu}>
+                <button
+                  type="button"
+                  className={`${s.appOption} ${appProxyId === null ? s.appOptionActive : ''}`}
+                  onClick={() => {
+                    setAppProxy(null);
+                    setAppSelectOpen(false);
+                  }}
+                >
+                  <span className={s.appOptionMain}>{t('settings.proxy.appNone')}</span>
+                  {appProxyId === null && <Check size={16} className={s.appOptionCheck} />}
+                </button>
+                {proxies.map((p) => {
+                  const on = appProxyId === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className={`${s.appOption} ${on ? s.appOptionActive : ''}`}
+                      onClick={() => {
+                        setAppProxy(p.id);
+                        setAppSelectOpen(false);
+                      }}
+                    >
+                      <span className={s.appOptionMain}>
+                        {p.host}:{p.port}
+                        {p.username ? ` · ${p.username}` : ''}
+                      </span>
+                      {on && <Check size={16} className={s.appOptionCheck} />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
 
         <div className={s.toggleMenu}>
           <div className={s.text}>

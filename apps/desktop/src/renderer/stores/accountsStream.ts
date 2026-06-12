@@ -1,8 +1,9 @@
-import type { AccountScope, AccountSummary, ServiceId } from '@shared-types';
+import type { AccountScope, AccountSummary, LauncherSettings, ServiceId } from '@shared-types';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { create } from 'zustand';
 import { useAccountsLoading } from './accountsLoading';
+import { useSettings } from './settings';
 
 export const STREAM_SERVICES = [
   'steam',
@@ -31,10 +32,14 @@ export interface StreamProgress {
 
 interface AccountsStreamState {
   streaming: boolean;
+  streamId: number;
+  activeScope: AccountScope;
   loaded: ReadonlySet<StreamKey>;
   streamed: Map<StreamKey, AccountSummary[]>;
   progress: StreamProgress | null;
   setStreaming: (streaming: boolean) => void;
+  setStreamId: (streamId: number) => void;
+  setActiveScope: (scope: AccountScope) => void;
   setLoaded: (updater: (prev: ReadonlySet<StreamKey>) => ReadonlySet<StreamKey>) => void;
   setProgress: (progress: StreamProgress | null) => void;
   resetAccumulator: () => void;
@@ -43,15 +48,21 @@ interface AccountsStreamState {
 
 export const useAccountsStream = create<AccountsStreamState>((set) => ({
   streaming: false,
+  streamId: 0,
+  activeScope: 'purchased',
   loaded: new Set(),
   streamed: new Map(),
   progress: null,
   setStreaming: (streaming) => set({ streaming }),
+  setStreamId: (streamId) => set({ streamId }),
+  setActiveScope: (activeScope) => set({ activeScope }),
   setLoaded: (updater) => set((s) => ({ loaded: updater(s.loaded) })),
   setProgress: (progress) => set({ progress }),
   resetAccumulator: () => set({ streamed: new Map() }),
   reset: () => set({ streaming: false, loaded: new Set(), streamed: new Map(), progress: null }),
 }));
+
+let streamSeq = 0;
 
 /** Has this scope finished streaming all its categories? */
 export const isScopeLoaded = (loaded: ReadonlySet<StreamKey>, scope: AccountScope): boolean =>
@@ -69,7 +80,10 @@ export const mergeWithStream = (base: AccountSummary[]): AccountSummary[] => {
 export const startAccountsStream = (only?: StreamService, scope: AccountScope = 'purchased') => {
   const st = useAccountsStream.getState();
   if (st.streaming) return;
+  const id = ++streamSeq;
   st.setStreaming(true);
+  st.setStreamId(id);
+  st.setActiveScope(scope);
   st.setProgress(null);
   if (only) {
     const key = streamKey(scope, only);
@@ -88,7 +102,24 @@ export const startAccountsStream = (only?: StreamService, scope: AccountScope = 
     });
     for (const k of [...st.streamed.keys()]) if (k.startsWith(`${scope}:`)) st.streamed.delete(k);
   }
-  void window.launcher.accounts.listStream(only, scope).catch(() => st.setStreaming(false));
+  void window.launcher.accounts.listStream(only, scope, id).catch(() => {
+    if (useAccountsStream.getState().streamId === id)
+      useAccountsStream.getState().setStreaming(false);
+  });
+};
+
+export const restartAccountsStream = (scope?: AccountScope) => {
+  const st = useAccountsStream.getState();
+  const target = scope ?? st.activeScope;
+  st.setStreaming(false);
+  startAccountsStream(undefined, target);
+};
+
+const appProxySignature = (settings: LauncherSettings): string => {
+  const p = settings.appProxyId
+    ? settings.proxies.find((x) => x.id === settings.appProxyId)
+    : undefined;
+  return p ? `${p.host}:${p.port}:${p.username ?? ''}:${p.password ?? ''}` : 'direct';
 };
 
 export const useAccountsStreamController = () => {
@@ -99,8 +130,9 @@ export const useAccountsStreamController = () => {
       qc.setQueryData<AccountSummary[]>(['accounts'], (prev) => mergeWithStream(prev ?? []));
 
     const off = window.launcher.accounts.onCategory(
-      ({ serviceId, scope, items, categoryDone, done, page, totalPages }) => {
+      ({ streamId, serviceId, scope, items, categoryDone, done, page, totalPages }) => {
         const st = useAccountsStream.getState();
+        if (streamId !== st.streamId) return;
         if (!isStreamService(serviceId)) {
           if (done) {
             st.setStreaming(false);
@@ -155,6 +187,28 @@ export const useAccountsStreamController = () => {
       cancelled = true;
       off();
     };
+  }, [qc]);
+
+  useEffect(() => {
+    const sigOf = (s: LauncherSettings | null): string | null => (s ? appProxySignature(s) : null);
+    let prev = sigOf(useSettings.getState().settings);
+    const unsub = useSettings.subscribe((state) => {
+      const sig = sigOf(state.settings);
+      if (sig === null) return;
+      if (prev === null) {
+        prev = sig;
+        return;
+      }
+      if (sig === prev) return;
+      prev = sig;
+      void window.launcher.accounts.clearCache().then(() => {
+        const st = useAccountsStream.getState();
+        st.reset();
+        qc.setQueryData<AccountSummary[]>(['accounts'], []);
+        restartAccountsStream();
+      });
+    });
+    return unsub;
   }, [qc]);
 
   const streaming = useAccountsStream((st) => st.streaming);

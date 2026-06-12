@@ -2,6 +2,7 @@ import {
   type AccountsCategoryEvent,
   type CheckAccountResult,
   IPC_CHANNELS,
+  type LabelMutationResult,
   type LoginProgress,
   type NetworkStatus,
   type ProxyTestResult,
@@ -15,6 +16,8 @@ import type {
   AuthStatus,
   AuthTokenPayload,
   LauncherSettings,
+  MailLettersRequest,
+  MailLettersResult,
   MarketCurrency,
   PickFileOptions,
   ProxyEntry,
@@ -48,8 +51,11 @@ const api = {
   },
   accounts: {
     list: () => invoke<AccountSummary[]>(IPC_CHANNELS.ACCOUNTS_LIST),
-    listStream: (only?: ServiceId, scope?: AccountScope) =>
-      invoke<void>(IPC_CHANNELS.ACCOUNTS_LIST_STREAM, only || scope ? { only, scope } : undefined),
+    listStream: (only?: ServiceId, scope?: AccountScope, streamId?: number) =>
+      invoke<void>(
+        IPC_CHANNELS.ACCOUNTS_LIST_STREAM,
+        only || scope || streamId !== undefined ? { only, scope, streamId } : undefined,
+      ),
     onCategory: (h: (p: AccountsCategoryEvent) => void) =>
       on<AccountsCategoryEvent>(IPC_CHANNELS.ACCOUNTS_CATEGORY, h),
     refresh: () => invoke<AccountSummary[]>(IPC_CHANNELS.ACCOUNTS_REFRESH),
@@ -81,6 +87,18 @@ const api = {
     refreshLabels: () => invoke<UserLabel[]>(IPC_CHANNELS.PROFILE_LABELS_REFRESH),
     setCurrency: (currency: MarketCurrency) =>
       invoke<{ ok: boolean; message?: string }>(IPC_CHANNELS.PROFILE_SET_CURRENCY, { currency }),
+    createLabel: (title: string, bc: string) =>
+      invoke<LabelMutationResult>(IPC_CHANNELS.PROFILE_LABEL_CREATE, { title, bc }),
+    updateLabel: (tagId: number, title: string, bc: string) =>
+      invoke<LabelMutationResult>(IPC_CHANNELS.PROFILE_LABEL_UPDATE, { tagId, title, bc }),
+    deleteLabel: (tagId: number) =>
+      invoke<LabelMutationResult>(IPC_CHANNELS.PROFILE_LABEL_DELETE, { tagId }),
+    reorderLabels: (tagIds: number[]) =>
+      invoke<LabelMutationResult>(IPC_CHANNELS.PROFILE_LABEL_REORDER, { tagIds }),
+  },
+  mail: {
+    getLetters: (params: MailLettersRequest) =>
+      invoke<MailLettersResult>(IPC_CHANNELS.MAIL_GET_LETTERS, params),
   },
   settings: {
     get: () => invoke<SettingsResponse>(IPC_CHANNELS.SETTINGS_GET),
