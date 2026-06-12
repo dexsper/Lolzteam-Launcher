@@ -1,4 +1,4 @@
-<img width="2532" height="1786" alt="image" src="https://github.com/user-attachments/assets/9609c26e-d282-48a0-b0b7-3a4ed4401bb5" />
+<img width="1266" height="793" alt="image" src="https://github.com/user-attachments/assets/22acfaea-fc9c-443d-9130-fdb429458d70" />
 
 
 # Lolzteam Launcher
