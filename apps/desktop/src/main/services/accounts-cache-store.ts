@@ -1,10 +1,24 @@
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
 import type { AccountSummary } from '@shared-types';
-import { app } from 'electron';
+import { app, safeStorage } from 'electron';
 import log from 'electron-log/main';
 
 const FILE_NAME = 'accounts-cache.json';
+
+const serialize = (json: string): Buffer =>
+  safeStorage.isEncryptionAvailable() ? safeStorage.encryptString(json) : Buffer.from(json, 'utf8');
+
+const deserialize = (buf: Buffer): string => {
+  if (safeStorage.isEncryptionAvailable()) {
+    try {
+      return safeStorage.decryptString(buf);
+    } catch {
+      // Legacy plaintext cache written before encryption landed.
+    }
+  }
+  return buf.toString('utf8');
+};
 
 const CACHE_VERSION = 2;
 
@@ -24,7 +38,7 @@ class AccountsCacheStore {
   async load(): Promise<CachePayload | null> {
     if (this.cached !== undefined) return this.cached;
     try {
-      const raw = await fs.readFile(cacheFile(), 'utf8');
+      const raw = deserialize(await fs.readFile(cacheFile()));
       const parsed = JSON.parse(raw) as Partial<CachePayload>;
       this.cached =
         parsed.version === CACHE_VERSION &&
@@ -44,10 +58,7 @@ class AccountsCacheStore {
   async save(items: AccountSummary[]): Promise<CachePayload> {
     const payload: CachePayload = { version: CACHE_VERSION, fetchedAt: Date.now(), items };
     try {
-      await fs.writeFile(cacheFile(), JSON.stringify(payload), {
-        encoding: 'utf8',
-        mode: 0o600,
-      });
+      await fs.writeFile(cacheFile(), serialize(JSON.stringify(payload)), { mode: 0o600 });
     } catch (err) {
       log.warn('[accounts-cache] failed to write', err);
     }

@@ -710,6 +710,12 @@
   animation: spin 1s linear infinite;
 }
 
+.forumMsg {
+  margin: $space-2 0 0;
+  font-size: $fs-sm;
+  color: $color-text-muted;
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }

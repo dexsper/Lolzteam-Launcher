@@ -629,3 +629,50 @@
   width: 20px;
   color: $color-accent;
 }
+
+.linkHint {
+  margin: 0 0 $space-3;
+  font-size: $fs-sm;
+  line-height: 1.5;
+  color: $color-text-muted;
+  white-space: pre-line;
+}
+
+.linkInput {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  padding: $space-3;
+  border-radius: $radius-md;
+  border: 1px solid #ffffff24;
+  background: #ffffff0d;
+  color: $color-text;
+  font-family: $font-mono;
+  font-size: $fs-xs;
+  line-height: 1.4;
+
+  &:focus-visible {
+    @include focus-ring;
+    outline: none;
+  }
+}
+
+.linkError {
+  margin: $space-2 0 0;
+  font-size: $fs-sm;
+  color: $color-warning;
+}
+
+.linkCode {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: $space-3;
+  border-radius: $radius-md;
+  background: #ffffff12;
+  color: $color-text;
+  font-family: $font-mono;
+  font-size: $fs-xs;
+  word-break: break-all;
+  user-select: all;
+}

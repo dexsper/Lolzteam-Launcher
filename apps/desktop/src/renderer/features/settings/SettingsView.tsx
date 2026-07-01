@@ -5,9 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { CurrencyModal } from '~/features/profile/CurrencyModal';
 import { LanguageModal } from '~/features/profile/LanguageModal';
 import { CURRENCY_FLAG, LOCALE_FLAG } from '~/lib/flags';
+import { useSettings } from '~/stores/settings';
 import { useUpdater } from '~/stores/updater';
 import { Flag } from '~/widgets/Flag/Flag';
 import { Modal } from '~/widgets/Modal/Modal';
+import { LoginMethodsView } from './LoginMethodsView';
 import { ProfileView } from './ProfileView';
 import { ProxyView } from './ProxyView';
 import s from './SettingsView.module.scss';
@@ -18,10 +20,26 @@ const TG_ACCOUNT_OPTIONS: readonly { value: number; label: string }[] = [
   { value: 0, label: '∞' },
 ];
 
+const CONCURRENCY_OPTIONS: readonly { value: number; label: string }[] = [
+  { value: 1, label: '1' },
+  { value: 2, label: '2' },
+  { value: 3, label: '3' },
+  { value: 4, label: '4' },
+];
+
+const BG_REFRESH_OPTIONS: readonly { value: number; label: string }[] = [
+  { value: 0, label: '✕' },
+  { value: 15, label: '15м' },
+  { value: 30, label: '30м' },
+  { value: 60, label: '60м' },
+];
+
 export const SettingsView = () => {
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const [settings, setSettings] = useState<LauncherSettings | null>(null);
+  const [settings, setSettings] = useState<LauncherSettings | null>(
+    () => useSettings.getState().settings,
+  );
   const [picking, setPicking] = useState(false);
   const [clearingCache, setClearingCache] = useState(false);
   const [cacheCleared, setCacheCleared] = useState(false);
@@ -36,6 +54,7 @@ export const SettingsView = () => {
   const setUpdateStatus = useUpdater((u) => u.setStatus);
   const [appVersion, setAppVersion] = useState<string | null>(null);
   const [showProxy, setShowProxy] = useState(false);
+  const [showLoginMethods, setShowLoginMethods] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const authStatus = useQuery({
@@ -101,6 +120,30 @@ export const SettingsView = () => {
     const next = await window.launcher.settings.set({
       steamInvisible: !(settings?.steamInvisible ?? false),
     });
+    setSettings(next.settings);
+  };
+
+  const toggleRefreshOnLaunch = async () => {
+    const next = await window.launcher.settings.set({
+      refreshOnLaunch: !(settings?.refreshOnLaunch ?? true),
+    });
+    setSettings(next.settings);
+  };
+
+  const toggleMinimizeToTray = async () => {
+    const next = await window.launcher.settings.set({
+      minimizeToTray: !(settings?.minimizeToTray ?? true),
+    });
+    setSettings(next.settings);
+  };
+
+  const setBackgroundRefreshMinutes = async (n: number) => {
+    const next = await window.launcher.settings.set({ backgroundRefreshMinutes: n });
+    setSettings(next.settings);
+  };
+
+  const setAccountLoadConcurrency = async (n: number) => {
+    const next = await window.launcher.settings.set({ accountLoadConcurrency: n });
     setSettings(next.settings);
   };
 
@@ -201,6 +244,7 @@ export const SettingsView = () => {
   })();
 
   if (showProxy) return <ProxyView onBack={() => setShowProxy(false)} />;
+  if (showLoginMethods) return <LoginMethodsView onBack={() => setShowLoginMethods(false)} />;
   if (showProfile) return <ProfileView onBack={() => setShowProfile(false)} />;
 
   return (
@@ -529,6 +573,96 @@ export const SettingsView = () => {
                 />
               </svg>
             </div>
+            <div className={s.settingsMenu}>
+              <div className={s.text}>
+                <span className={s.title}>{t('settings.app.refreshOnLaunchLabel')}</span>
+                <div className={s.descriptionBlock}>
+                  <span className={s.description}>{t('settings.app.refreshOnLaunchHint')}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={settings?.refreshOnLaunch ?? true}
+                className={s.toggleRow}
+                onClick={() => void toggleRefreshOnLaunch()}
+              >
+                <span
+                  className={`${s.switch} ${(settings?.refreshOnLaunch ?? true) ? s.switchOn : ''}`}
+                >
+                  <span className={s.switchKnob} />
+                </span>
+              </button>
+            </div>
+            <div className={s.settingsMenu}>
+              <div className={s.text}>
+                <span className={s.title}>{t('settings.app.backgroundRefreshLabel')}</span>
+                <div className={s.descriptionBlock}>
+                  <span className={s.description}>{t('settings.app.backgroundRefreshHint')}</span>
+                </div>
+              </div>
+              <div className={s.segmented}>
+                {BG_REFRESH_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={`${s.segmentBtn} ${
+                      (settings?.backgroundRefreshMinutes ?? 0) === opt.value
+                        ? s.segmentBtnActive
+                        : ''
+                    }`}
+                    onClick={() => void setBackgroundRefreshMinutes(opt.value)}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className={s.settingsMenu}>
+              <div className={s.text}>
+                <span className={s.title}>{t('settings.app.concurrencyLabel')}</span>
+                <div className={s.descriptionBlock}>
+                  <span className={s.description}>{t('settings.app.concurrencyHint')}</span>
+                </div>
+              </div>
+              <div className={s.segmented}>
+                {CONCURRENCY_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={`${s.segmentBtn} ${
+                      (settings?.accountLoadConcurrency ?? 2) === opt.value
+                        ? s.segmentBtnActive
+                        : ''
+                    }`}
+                    onClick={() => void setAccountLoadConcurrency(opt.value)}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className={s.settingsMenu}>
+              <div className={s.text}>
+                <span className={s.title}>{t('settings.app.minimizeToTrayLabel')}</span>
+                <div className={s.descriptionBlock}>
+                  <span className={s.description}>{t('settings.app.minimizeToTrayHint')}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={settings?.minimizeToTray ?? true}
+                className={s.toggleRow}
+                onClick={() => void toggleMinimizeToTray()}
+              >
+                <span
+                  className={`${s.switch} ${(settings?.minimizeToTray ?? true) ? s.switchOn : ''}`}
+                >
+                  <span className={s.switchKnob} />
+                </span>
+              </button>
+            </div>
             <div
               className={s.settingsMenu}
               role="button"
@@ -545,6 +679,40 @@ export const SettingsView = () => {
                 <span className={s.title}>{t('settings.proxy.menuLabel')}</span>
                 <div className={s.descriptionBlock}>
                   <span className={s.description}>{t('settings.proxy.menuHint')}</span>
+                </div>
+              </div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <path
+                  d="M5 12H19M19 12L12 5M19 12L12 19"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <div
+              className={s.settingsMenu}
+              role="button"
+              tabIndex={0}
+              onClick={() => setShowLoginMethods(true)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setShowLoginMethods(true);
+                }
+              }}
+            >
+              <div className={s.text}>
+                <span className={s.title}>{t('settings.loginMethods.menuLabel')}</span>
+                <div className={s.descriptionBlock}>
+                  <span className={s.description}>{t('settings.loginMethods.menuHint')}</span>
                 </div>
               </div>
               <svg

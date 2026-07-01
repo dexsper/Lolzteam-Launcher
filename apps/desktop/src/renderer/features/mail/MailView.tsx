@@ -1,8 +1,9 @@
 import type { MailLetter } from '@shared-types';
 import DOMPurify from 'dompurify';
 import { AtSign, ChevronDown, Inbox, Loader2, Search, X } from 'lucide-react';
-import { type MouseEvent, useState } from 'react';
+import { type MouseEvent, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useMailTarget } from '~/stores/mailTarget';
 import { useSettings } from '~/stores/settings';
 import s from './MailView.module.scss';
 
@@ -142,6 +143,15 @@ export const MailView = () => {
     setInput(entry);
     void run(entry);
   };
+
+  useEffect(() => {
+    const pending = useMailTarget.getState().pending;
+    if (pending) {
+      useMailTarget.getState().setPending(null);
+      setInput(pending);
+      void run(pending);
+    }
+  }, []);
 
   return (
     <div className={s.container}>

@@ -81,6 +81,8 @@ const api = {
       invoke<TagOpResult>(IPC_CHANNELS.ACCOUNT_REMOVE_TAG, { itemId, tagId }),
     onLoginProgress: (h: (p: LoginProgress) => void) =>
       on<LoginProgress>(IPC_CHANNELS.ACCOUNT_LOGIN_PROGRESS, h),
+    onLoginRequest: (h: (p: { itemId: number }) => void) =>
+      on<{ itemId: number }>(IPC_CHANNELS.ACCOUNT_LOGIN_REQUEST, h),
   },
   profile: {
     getLabels: () => invoke<UserLabel[]>(IPC_CHANNELS.PROFILE_LABELS_GET),
@@ -99,6 +101,8 @@ const api = {
   mail: {
     getLetters: (params: MailLettersRequest) =>
       invoke<MailLettersResult>(IPC_CHANNELS.MAIL_GET_LETTERS, params),
+    onOpenRequest: (h: (p: { emailPassword: string }) => void) =>
+      on<{ emailPassword: string }>(IPC_CHANNELS.MAIL_OPEN_REQUEST, h),
   },
   settings: {
     get: () => invoke<SettingsResponse>(IPC_CHANNELS.SETTINGS_GET),
@@ -113,8 +117,14 @@ const api = {
     clearSession: () => invoke<{ ok: boolean; message?: string }>(IPC_CHANNELS.STEAM_CLEAR_SESSION),
   },
   proxy: {
-    test: (input: Pick<ProxyEntry, 'host' | 'port' | 'username' | 'password'>) =>
+    test: (input: Pick<ProxyEntry, 'host' | 'port' | 'username' | 'password' | 'protocol'>) =>
       invoke<ProxyTestResult>(IPC_CHANNELS.PROXY_TEST, input),
+    fetchMarket: () =>
+      invoke<{
+        ok: boolean;
+        proxies?: Array<Pick<ProxyEntry, 'protocol' | 'host' | 'port' | 'username' | 'password'>>;
+        message?: string;
+      }>(IPC_CHANNELS.PROXY_FETCH_MARKET),
   },
   app: {
     getVersion: () => invoke<string>(IPC_CHANNELS.APP_GET_VERSION),

@@ -25,6 +25,9 @@
 .scopeTab {
   @include button-reset;
   @include clickable;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
   padding: $space-1 $space-4;
   border-radius: $radius-pill;
   font-size: $fs-sm;
@@ -48,6 +51,11 @@
 
   &:hover {
     color: #06170f;
+  }
+
+  .filterCount {
+    background-color: #ffffff96;
+    opacity: 1;
   }
 }
 

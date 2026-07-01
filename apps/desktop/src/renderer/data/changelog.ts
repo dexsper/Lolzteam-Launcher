@@ -9,6 +9,44 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.7.0',
+    date: '2026-07-01',
+    changes: {
+      ru: [
+        'Добавлена категория LLM - вход в аккаунты Claude, ChatGPT, Cursor и Grok через встроенный браузер',
+        'Выбор способа входа: для сервисов с несколькими вариантами (Steam — клиент или браузер) показывается модалка «Как войти?» с галочкой «Запомнить выбор»',
+        'Новая страница настроек «Способы входа» - задать способ входа по умолчанию для сервиса',
+        'Вход в аккаунт по ссылке из браузерного расширения (поддержка DeepLink) - с подтверждением, выбором метода и прокси',
+        'Вход в почту аккаунта: пункт «Почта» в карточке и иконка в браузере открывают письма ящика на странице «Почта»',
+        'Системный трей: при закрытии окна приложение сворачивается в трей и продолжает работать в фоне',
+        'Добавлена настройка обновления списка аккаунтов при запуске',
+        'Добавлено фоновое автообновление аккаунтов (каждые 15/30/60 минут)',
+        'Добавлена настройка числа потоков загрузки аккаунтов теперь список грузится быстрее',
+        'Добавлена загрузка ваших прокси с форума одной кнопкой',
+        'Чувствительные данные на диске (настройки, прокси, почты, кэш аккаунтов) теперь шифруются',
+        'Исправлено: закрытие окна браузера полностью завершает сессию (раньше сайт продолжал работать в фоне)',
+        'Исправлена повторная загрузка аккаунтов при переключении вкладок и разделов',
+        'Исправлено кратковременное мигание настроек при открытии',
+      ],
+      en: [
+        'Added the LLM category — sign in to Claude, ChatGPT, Cursor and Grok accounts via the built-in browser',
+        'Sign-in method choice: for services with more than one option (Steam — app client or browser) a "How to sign in?" modal appears with a "Remember my choice" checkbox',
+        'New Settings → "Sign-in methods" page to set the default sign-in method per service',
+        'Sign in to an account via a link from the browser extension (deep-link support) — with confirmation, method and proxy pickers',
+        'Open the account email: an "Email" item on the card and an icon in the browser open the mailbox on the Mail page',
+        'System tray: closing the window minimizes the app to the tray and keeps it running in the background',
+        'Added a setting to refresh the account list on launch',
+        'Added background auto-refresh of accounts (every 15/30/60 minutes)',
+        'Added an account-loading threads setting — the list now loads faster',
+        'Added one-click import of your proxies from the forum',
+        'Sensitive on-disk data (settings, proxies, mail, accounts cache) is now encrypted',
+        'Fixed: closing the browser window now fully ends the session (previously the site kept running in the background)',
+        'Fixed accounts re-loading when switching tabs and sections',
+        'Fixed a brief flicker of the settings when opening them',
+      ],
+    },
+  },
+  {
     version: '0.6.0',
     date: '2026-06-12',
     changes: {

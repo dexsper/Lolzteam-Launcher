@@ -28,6 +28,7 @@ const SERVICE_LABELS: Record<StreamService, string> = {
   tiktok: 'TikTok',
   instagram: 'Instagram',
   discord: 'Discord',
+  llm: 'LLM',
 };
 
 const formatBalance = (balance: number | null, currency: string | null, locale: string) => {

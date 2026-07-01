@@ -10,6 +10,7 @@ const BROWSER_NAV_OPEN_EXTERNAL = 'browser-nav:open-external';
 const BROWSER_NAV_EXPAND = 'browser-nav:expand';
 const BROWSER_NAV_COLLAPSE = 'browser-nav:collapse';
 const BROWSER_NAV_PROXY_RETEST = 'browser-nav:proxy-retest';
+const BROWSER_NAV_OPEN_EMAIL = 'browser-nav:open-email';
 const BROWSER_NAV_STATE = 'browser-nav:state';
 
 type RetestResult = { ok: true; ms: number; ip: string } | { ok: false; message: string };
@@ -33,6 +34,7 @@ const browserNav = {
   expand: () => ipcRenderer.invoke(BROWSER_NAV_EXPAND),
   collapse: () => ipcRenderer.invoke(BROWSER_NAV_COLLAPSE),
   proxyRetest: (): Promise<RetestResult> => ipcRenderer.invoke(BROWSER_NAV_PROXY_RETEST),
+  openEmail: () => ipcRenderer.invoke(BROWSER_NAV_OPEN_EMAIL),
   onState: (cb: (state: NavState) => void): (() => void) => {
     const listener = (_e: unknown, state: NavState): void => cb(state);
     ipcRenderer.on(BROWSER_NAV_STATE, listener);

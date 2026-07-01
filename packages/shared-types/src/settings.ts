@@ -3,14 +3,13 @@ import type { ServiceId } from './service-id';
 export type LocalePreference = 'ru' | 'en';
 export type Locale = 'ru' | 'en';
 
-// Steam is proxy-capable only for the "open in browser" login; the native
-// desktop-client login connects directly and ignores any selected proxy.
 export const PROXY_CAPABLE_SERVICES: ServiceId[] = [
   'steam',
   'telegram',
   'tiktok',
   'instagram',
   'discord',
+  'llm',
 ];
 
 export interface ProxyTestResult {
@@ -24,6 +23,8 @@ export interface ProxyTestResult {
 export interface ProxyEntry {
   id: string;
   label?: string;
+  /** Proxy scheme. Defaults to 'http' when absent (back-compat). */
+  protocol?: 'http' | 'https';
   host: string;
   port: number;
   username?: string;
@@ -45,6 +46,16 @@ export interface LauncherSettings {
   inventorySortKey: InventorySortKey;
   inventorySortDir: InventorySortDir;
   mailHistory: string[];
+  /** Refresh the account list automatically when the app starts. */
+  refreshOnLaunch: boolean;
+  /** Auto-refresh interval in minutes while running (0 = off). */
+  backgroundRefreshMinutes: number;
+  /** Hide to the system tray instead of quitting when the window is closed. */
+  minimizeToTray: boolean;
+  /** How many account categories to load concurrently (1–4). */
+  accountLoadConcurrency: number;
+  /** Remembered login method per service (e.g. Steam: native client vs browser). */
+  preferredLoginMethod: Partial<Record<ServiceId, 'native' | 'web'>>;
 }
 
 export type InventorySortKey = 'purchased' | 'price' | 'warranty';
@@ -63,6 +74,11 @@ export const DEFAULT_SETTINGS: LauncherSettings = {
   inventorySortKey: 'purchased',
   inventorySortDir: 'desc',
   mailHistory: [],
+  refreshOnLaunch: true,
+  backgroundRefreshMinutes: 0,
+  minimizeToTray: true,
+  accountLoadConcurrency: 2,
+  preferredLoginMethod: {},
 };
 
 export interface SettingsResponse {

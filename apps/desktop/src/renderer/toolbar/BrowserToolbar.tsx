@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Copy, ExternalLink, RotateCw, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Copy, ExternalLink, Mail, RotateCw, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import logoUrl from '~/assets/logolzt.svg';
 import s from './BrowserToolbar.module.scss';
@@ -24,6 +24,7 @@ interface BrowserNavBridge {
   expand: () => Promise<unknown>;
   collapse: () => Promise<unknown>;
   proxyRetest: () => Promise<RetestResult>;
+  openEmail: () => Promise<unknown>;
   onState: (cb: (state: NavState) => void) => () => void;
 }
 
@@ -42,6 +43,7 @@ const L = {
   copy: isRu ? 'Копировать ссылку' : 'Copy link',
   copied: isRu ? 'Скопировано' : 'Copied',
   external: isRu ? 'Открыть во внешнем браузере' : 'Open in external browser',
+  email: isRu ? 'Почта аккаунта' : 'Account email',
   placeholder: isRu ? 'Введите адрес или запрос' : 'Search or enter address',
   proxy: isRu ? 'Прокси' : 'Proxy',
   proxyTitle: isRu ? 'Активный прокси' : 'Active proxy',
@@ -54,6 +56,7 @@ const L = {
 };
 
 const params = new URLSearchParams(location.search);
+const emailEnabled = params.get('email') === '1';
 const proxy = {
   enabled: params.get('proxy') === '1',
   label: params.get('label') ?? '',
@@ -181,8 +184,8 @@ export const BrowserToolbar = () => {
               }
             }}
           />
-          {state.isLoading && <span className={s.progress} />}
         </div>
+        {state.isLoading && <span className={s.progress} />}
 
         <button
           type="button"
@@ -202,6 +205,17 @@ export const BrowserToolbar = () => {
         >
           <ExternalLink size={16} />
         </button>
+        {emailEnabled && (
+          <button
+            type="button"
+            className={s.iconBtn}
+            onClick={() => void window.browserNav.openEmail()}
+            title={L.email}
+            aria-label={L.email}
+          >
+            <Mail size={16} />
+          </button>
+        )}
 
         {proxy.enabled && (
           <div className={s.proxyWrap}>

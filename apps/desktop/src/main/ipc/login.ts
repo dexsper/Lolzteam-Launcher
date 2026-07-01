@@ -26,7 +26,7 @@ const broadcast = (itemId: number, event: LoginProgressEvent): void => {
   }
 };
 
-const buildCtx = async (
+export const buildCtx = async (
   itemId: number,
   abortSignal: AbortSignal,
   category: ServiceId | null,

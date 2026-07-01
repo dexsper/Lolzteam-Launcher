@@ -27,6 +27,7 @@ import { AccountCard } from './AccountCard';
 import { SkeletonCard } from './InventorySkeleton';
 import s from './InventoryView.module.scss';
 import { LabelMultiSelect } from './LabelMultiSelect';
+import { LlmServiceFilter, type LlmServiceFilterValue } from './LlmServiceFilter';
 
 const CHUNK = 24;
 
@@ -39,6 +40,7 @@ const SUPPORTED_SERVICES = [
   'tiktok',
   'instagram',
   'discord',
+  'llm',
 ] as const satisfies readonly ServiceId[];
 type SupportedService = (typeof SUPPORTED_SERVICES)[number];
 const isSupportedService = (id: ServiceId | null): id is SupportedService =>
@@ -50,6 +52,7 @@ const SERVICE_LABELS: Record<SupportedService, string> = {
   tiktok: 'TikTok',
   instagram: 'Instagram',
   discord: 'Discord',
+  llm: 'LLM',
 };
 
 type Filter = ServiceId | 'all';
@@ -152,16 +155,18 @@ export const InventoryView = () => {
     void loadLabels();
   }, [loadLabels]);
   const [filter, setFilter] = useState<Filter>('all');
-  const [scope, setScope] = useState<AccountScope>('purchased');
+  const [scope, setScope] = useState<AccountScope>(() => useAccountsStream.getState().activeScope);
   // Label filters: show accounts that carry ANY included label, hiding any that
   // carry an excluded one. A label can be in include or exclude, not both.
   const [includeLabels, setIncludeLabels] = useState<number[]>([]);
   const [excludeLabels, setExcludeLabels] = useState<number[]>([]);
   const [search, setSearch] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
+  const [llmServiceFilter, setLlmServiceFilter] = useState<LlmServiceFilterValue>('all');
   const [limit, setLimit] = useState(CHUNK);
   const streaming = useAccountsStream((st) => st.streaming);
   const loaded = useAccountsStream((st) => st.loaded);
+  const launchHandled = useAccountsStream((st) => st.launchHandled);
   const settings = useSettings((st) => st.settings);
   const setSettings = useSettings((st) => st.set);
   const hideInvalid = settings?.inventoryHideInvalid ?? false;
@@ -231,10 +236,20 @@ export const InventoryView = () => {
     () => items.filter((it) => (it.scope ?? 'purchased') === scope),
     [items, scope],
   );
+  const scopeCounts = useMemo(() => {
+    let purchased = 0;
+    let listed = 0;
+    for (const it of items) {
+      if ((it.scope ?? 'purchased') === 'listed') listed++;
+      else purchased++;
+    }
+    return { purchased, listed };
+  }, [items]);
   useEffect(() => {
     useAccountsStream.getState().setActiveScope(scope);
+    if (!launchHandled) return;
     if (!isScopeLoaded(loaded, scope) && !streaming) startAccountsStream(undefined, scope);
-  }, [scope, loaded, streaming]);
+  }, [scope, loaded, streaming, launchHandled]);
 
   const buckets = useMemo(
     () => buildBuckets(scopedItems, t('inventory.filter.all'), loaded, scope, streaming),
@@ -246,6 +261,7 @@ export const InventoryView = () => {
     const filtered = scopedItems.filter(
       (it) =>
         (filter === 'all' || it.category === filter) &&
+        (filter !== 'llm' || llmServiceFilter === 'all' || it.llmService === llmServiceFilter) &&
         (!hideInvalid || !isInvalidAccount(it)) &&
         matchesLabelFilters(
           it.tags.map((tg) => tg.id),
@@ -258,6 +274,7 @@ export const InventoryView = () => {
   }, [
     scopedItems,
     filter,
+    llmServiceFilter,
     hideInvalid,
     includeLabels,
     excludeLabels,
@@ -270,7 +287,22 @@ export const InventoryView = () => {
   useEffect(() => {
     setLimit(CHUNK);
     document.querySelector('[data-scroll-root]')?.scrollTo({ top: 0 });
-  }, [filter, scope, hideInvalid, includeLabels, excludeLabels, trimmedSearch, sortKey, sortDir]);
+  }, [
+    filter,
+    llmServiceFilter,
+    scope,
+    hideInvalid,
+    includeLabels,
+    excludeLabels,
+    trimmedSearch,
+    sortKey,
+    sortDir,
+  ]);
+
+  // Leaving the LLM tab clears the per-provider narrowing.
+  useEffect(() => {
+    if (filter !== 'llm') setLlmServiceFilter('all');
+  }, [filter]);
 
   const shown = visible.slice(0, limit);
   const hasMore = limit < visible.length;
@@ -377,7 +409,8 @@ export const InventoryView = () => {
                 setFilter('all');
               }}
             >
-              {t(`inventory.scope.${sc}`)}
+              <span>{t(`inventory.scope.${sc}`)}</span>
+              <span className={s.filterCount}>{scopeCounts[sc]}</span>
             </button>
           ))}
         </div>
@@ -427,6 +460,9 @@ export const InventoryView = () => {
             <RefreshCw size={14} className={streaming ? s.spin : ''} />
             <span>{t('inventory.refresh')}</span>
           </button>
+          {filter === 'llm' && (
+            <LlmServiceFilter value={llmServiceFilter} onChange={setLlmServiceFilter} />
+          )}
           <button
             type="button"
             className={`${s.filterBtn} ${filtersActive ? s.filterBtnActive : ''}`}

@@ -1,7 +1,7 @@
 import type { LoginStep } from '@adapter-contract';
 import { create } from 'zustand';
 
-export type LoginService = 'steam' | 'telegram' | 'browser' | 'discord';
+export type LoginService = 'steam' | 'telegram' | 'browser' | 'discord' | 'llm';
 export type LoginMethod = 'native' | 'web';
 
 interface LoginSessionState {

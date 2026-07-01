@@ -11,6 +11,7 @@ export const STREAM_SERVICES = [
   'tiktok',
   'instagram',
   'discord',
+  'llm',
 ] as const satisfies readonly ServiceId[];
 export type StreamService = (typeof STREAM_SERVICES)[number];
 
@@ -34,12 +35,16 @@ interface AccountsStreamState {
   streaming: boolean;
   streamId: number;
   activeScope: AccountScope;
+  launchHandled: boolean;
+  preloadScope: AccountScope | null;
   loaded: ReadonlySet<StreamKey>;
   streamed: Map<StreamKey, AccountSummary[]>;
   progress: StreamProgress | null;
   setStreaming: (streaming: boolean) => void;
   setStreamId: (streamId: number) => void;
   setActiveScope: (scope: AccountScope) => void;
+  setLaunchHandled: (launchHandled: boolean) => void;
+  setPreloadScope: (scope: AccountScope | null) => void;
   setLoaded: (updater: (prev: ReadonlySet<StreamKey>) => ReadonlySet<StreamKey>) => void;
   setProgress: (progress: StreamProgress | null) => void;
   resetAccumulator: () => void;
@@ -50,16 +55,27 @@ export const useAccountsStream = create<AccountsStreamState>((set) => ({
   streaming: false,
   streamId: 0,
   activeScope: 'purchased',
+  launchHandled: false,
+  preloadScope: null,
   loaded: new Set(),
   streamed: new Map(),
   progress: null,
   setStreaming: (streaming) => set({ streaming }),
   setStreamId: (streamId) => set({ streamId }),
   setActiveScope: (activeScope) => set({ activeScope }),
+  setLaunchHandled: (launchHandled) => set({ launchHandled }),
+  setPreloadScope: (preloadScope) => set({ preloadScope }),
   setLoaded: (updater) => set((s) => ({ loaded: updater(s.loaded) })),
   setProgress: (progress) => set({ progress }),
   resetAccumulator: () => set({ streamed: new Map() }),
-  reset: () => set({ streaming: false, loaded: new Set(), streamed: new Map(), progress: null }),
+  reset: () =>
+    set({
+      streaming: false,
+      preloadScope: null,
+      loaded: new Set(),
+      streamed: new Map(),
+      progress: null,
+    }),
 }));
 
 let streamSeq = 0;
@@ -77,13 +93,17 @@ export const mergeWithStream = (base: AccountSummary[]): AccountSummary[] => {
   return [...kept, ...[...touched.values()].flat()];
 };
 
-export const startAccountsStream = (only?: StreamService, scope: AccountScope = 'purchased') => {
+export const startAccountsStream = (
+  only?: StreamService,
+  scope: AccountScope = 'purchased',
+  opts?: { keepActiveScope?: boolean },
+) => {
   const st = useAccountsStream.getState();
   if (st.streaming) return;
   const id = ++streamSeq;
   st.setStreaming(true);
   st.setStreamId(id);
-  st.setActiveScope(scope);
+  if (!opts?.keepActiveScope) st.setActiveScope(scope);
   st.setProgress(null);
   if (only) {
     const key = streamKey(scope, only);
@@ -119,7 +139,9 @@ const appProxySignature = (settings: LauncherSettings): string => {
   const p = settings.appProxyId
     ? settings.proxies.find((x) => x.id === settings.appProxyId)
     : undefined;
-  return p ? `${p.host}:${p.port}:${p.username ?? ''}:${p.password ?? ''}` : 'direct';
+  return p
+    ? `${p.protocol ?? 'http'}://${p.host}:${p.port}:${p.username ?? ''}:${p.password ?? ''}`
+    : 'direct';
 };
 
 export const useAccountsStreamController = () => {
@@ -165,29 +187,55 @@ export const useAccountsStreamController = () => {
         if (done) {
           st.setStreaming(false);
           st.setProgress(null);
+          const next = useAccountsStream.getState().preloadScope;
+          if (next && next !== scope) {
+            useAccountsStream.getState().setPreloadScope(null);
+            if (!isScopeLoaded(useAccountsStream.getState().loaded, next))
+              startAccountsStream(undefined, next, { keepActiveScope: true });
+          } else if (next) {
+            useAccountsStream.getState().setPreloadScope(null);
+          }
         }
       },
     );
 
     let cancelled = false;
-    void window.launcher.accounts.list().then((cached) => {
-      if (cancelled) return;
-      const hasPurchased = cached.some((it) => scopeOf(it) === 'purchased');
-      if (hasPurchased) {
-        // Mark the purchased scope as already loaded from cache.
-        useAccountsStream
-          .getState()
-          .setLoaded(() => new Set(STREAM_SERVICES.map((id) => streamKey('purchased', id))));
-      } else {
-        startAccountsStream();
-      }
-    });
+    if (!useAccountsStream.getState().launchHandled) {
+      void window.launcher.settings.get().then((settingsResp) => {
+        if (cancelled || useAccountsStream.getState().launchHandled) return;
+        const refreshOnLaunch = settingsResp.settings.refreshOnLaunch ?? true;
+        if (refreshOnLaunch) {
+          useAccountsStream.getState().setPreloadScope('listed');
+          startAccountsStream(undefined, 'purchased');
+        } else {
+          useAccountsStream
+            .getState()
+            .setLoaded(
+              () =>
+                new Set([
+                  ...STREAM_SERVICES.map((id) => streamKey('purchased', id)),
+                  ...STREAM_SERVICES.map((id) => streamKey('listed', id)),
+                ]),
+            );
+        }
+        useAccountsStream.getState().setLaunchHandled(true);
+      });
+    }
 
     return () => {
       cancelled = true;
       off();
     };
   }, [qc]);
+
+  const bgMinutes = useSettings((s) => s.settings?.backgroundRefreshMinutes ?? 0);
+  useEffect(() => {
+    if (!bgMinutes || bgMinutes <= 0) return;
+    const id = setInterval(() => {
+      if (!useAccountsStream.getState().streaming) restartAccountsStream();
+    }, bgMinutes * 60_000);
+    return () => clearInterval(id);
+  }, [bgMinutes]);
 
   useEffect(() => {
     const sigOf = (s: LauncherSettings | null): string | null => (s ? appProxySignature(s) : null);

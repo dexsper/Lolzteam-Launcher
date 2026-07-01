@@ -1,12 +1,14 @@
 import type {
   AccountSummary,
   AccountTag,
+  LlmServiceId,
   ProxyEntry,
   ServiceId,
   SteamInfo,
   TelegramInfo,
   UserLabel,
 } from '@shared-types';
+import { LLM_SERVICE_LABELS, isLlmServiceSupported } from '@shared-types';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
@@ -20,6 +22,7 @@ import {
   Loader2,
   Lock,
   LogIn,
+  Mail,
   ShieldCheck,
   Star,
   Tag,
@@ -27,20 +30,34 @@ import {
 } from 'lucide-react';
 import { Fragment, type ReactNode, memo, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import chatgptLogo from '~/assets/category/chatgpt.svg';
+import claudeLogo from '~/assets/category/claude.svg';
+import cursorLogo from '~/assets/category/cursor.svg';
 import discordLogo from '~/assets/category/discord.svg';
+import grokLogo from '~/assets/category/grok.svg';
 import instagramLogo from '~/assets/category/instagram.svg';
+import llmLogo from '~/assets/category/llm.svg';
 import steamLogo from '~/assets/category/steam.svg';
 import telegramLogo from '~/assets/category/telegram.svg';
 import tiktokLogo from '~/assets/category/tiktok.svg';
 import { labelColors } from '~/lib/labelColor';
+import {
+  formatWarranty,
+  loginMethodFor,
+  loginMethodsFor,
+  toLoginService,
+} from '~/lib/loginService';
 import { formatAgo } from '~/lib/time';
-import { type LoginService, useLoginSession } from '~/stores/loginSession';
+import { type LoginMethod, useLoginSession } from '~/stores/loginSession';
+import { useMailTarget } from '~/stores/mailTarget';
 import { useProfileLabels } from '~/stores/profileLabels';
 import { useSettings } from '~/stores/settings';
+import { useView } from '~/stores/view';
 import { Flag } from '~/widgets/Flag/Flag';
 import { Modal } from '~/widgets/Modal/Modal';
 import { Tooltip } from '~/widgets/Tooltip/Tooltip';
 import s from './AccountCard.module.scss';
+import { LoginMethodModal } from './LoginMethodModal';
 
 interface AccountCardProps {
   item: AccountSummary;
@@ -52,10 +69,19 @@ const CATEGORY_LOGOS: Partial<Record<ServiceId, string>> = {
   tiktok: tiktokLogo,
   instagram: instagramLogo,
   discord: discordLogo,
+  llm: llmLogo,
+};
+
+const LLM_SERVICE_LOGOS: Record<LlmServiceId, string> = {
+  claude: claudeLogo,
+  chatgpt: chatgptLogo,
+  cursor: cursorLogo,
+  grok: grokLogo,
 };
 
 const EMPTY_PROXIES: ProxyEntry[] = [];
 const EMPTY_SERVICES: ServiceId[] = [];
+const EMPTY_PREFS: Partial<Record<ServiceId, 'native' | 'web'>> = {};
 
 const STEAM_ICON_BASE = 'https://nztcdn.com/steam/icon';
 
@@ -64,6 +90,9 @@ const VALID_TAG_ID = 1;
 const INVALID_TAG_ID = 2;
 // Status-driving tags rendered by the header dot, not as chips below the title.
 const STATUS_TAG_IDS = new Set([VALID_TAG_ID, INVALID_TAG_ID]);
+
+const RATE_LIMIT_COOLDOWN_MS = 60_000;
+const isRateLimitMessage = (msg: string): boolean => /\b429\b|rate.?limit/i.test(msg);
 
 const formatHours = (hours: number, locale: string): string => {
   const intlLocale = locale === 'ru' ? 'ru-RU' : 'en-US';
@@ -132,25 +161,6 @@ const formatPrice = (value: number, currency: string, locale: string) => {
     return `${value} ${currency}`;
   }
 };
-
-// Categories the launcher can actually sign into, mapped to the login pipeline
-// they use: native desktop clients (steam/telegram) vs. cookie-injection into a
-// built-in browser window (tiktok/instagram/...).
-const LOGIN_SERVICE_BY_CATEGORY: Partial<
-  Record<NonNullable<AccountSummary['category']>, LoginService>
-> = {
-  steam: 'steam',
-  telegram: 'telegram',
-  tiktok: 'browser',
-  instagram: 'browser',
-  discord: 'discord',
-};
-
-const toLoginService = (category: AccountSummary['category']): LoginService | null =>
-  category ? (LOGIN_SERVICE_BY_CATEGORY[category] ?? null) : null;
-
-const loginMethodFor = (service: LoginService): 'native' | 'web' =>
-  service === 'browser' || service === 'discord' ? 'web' : 'native';
 
 const SteamDetails = ({ steam }: { steam: SteamInfo }) => {
   const { t, i18n } = useTranslation();
@@ -296,23 +306,21 @@ const TelegramDetails = ({ tg }: { tg: TelegramInfo }) => {
 const AccountCardImpl = ({ item }: AccountCardProps) => {
   const { t, i18n } = useTranslation();
 
-  const formatWarranty = (warrantyEndsAt: number | null): string | null => {
-    if (!warrantyEndsAt) return null;
-    const ms = warrantyEndsAt * 1000 - Date.now();
-    if (ms <= 0) return null;
-    const days = Math.ceil(ms / (24 * 60 * 60 * 1000));
-    if (days >= 1) return t('inventory.card.warrantyDays', { count: days });
-    const hours = Math.ceil(ms / (60 * 60 * 1000));
-    return t('inventory.card.warrantyHours', { count: hours });
-  };
-
-  const warranty = formatWarranty(item.warrantyEndsAt);
+  const warranty = formatWarranty(item.warrantyEndsAt, t);
   const tags = item.tags ?? item.steam?.tags ?? item.telegram?.tags ?? [];
   const isInvalid = tags.some((tag) => tag.id === INVALID_TAG_ID);
   const chipTags = tags.filter((tag) => !STATUS_TAG_IDS.has(tag.id) && tag.title.trim() !== '');
   const service = toLoginService(item.category);
-  const canLogin = service !== null;
+  const llmUnsupported = item.category === 'llm' && !isLlmServiceSupported(item.llmService);
+  const canLogin = service !== null && !llmUnsupported;
   const categoryLogo = item.category ? CATEGORY_LOGOS[item.category] : undefined;
+  const llmServiceLogo =
+    item.category === 'llm' && item.llmService ? LLM_SERVICE_LOGOS[item.llmService] : undefined;
+  const thumbSrc = llmServiceLogo ?? item.imageUrl ?? categoryLogo;
+  const categoryText =
+    item.category === 'llm' && item.llmService
+      ? LLM_SERVICE_LABELS[item.llmService]
+      : item.categoryTitle;
 
   const colorForTag = (tag: AccountTag) =>
     labelColors(tag.bc ?? labels.find((l) => l.id === tag.id)?.bc);
@@ -340,8 +348,22 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
   const inProgress = step !== null && step !== 'done' && error === null;
   const busy = inProgress && activeItemId === item.itemId;
 
+  const [rateLimitedUntil, setRateLimitedUntil] = useState<number | null>(null);
+  const [, setCooldownTick] = useState(0);
+  useEffect(() => {
+    if (rateLimitedUntil === null) return;
+    const id = setInterval(() => {
+      setCooldownTick((n) => n + 1);
+      if (Date.now() >= rateLimitedUntil) setRateLimitedUntil(null);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [rateLimitedUntil]);
+  const cooldownLeft =
+    rateLimitedUntil !== null ? Math.max(0, Math.ceil((rateLimitedUntil - Date.now()) / 1000)) : 0;
+
   const [warnOpen, setWarnOpen] = useState(false);
   const [proxyOpen, setProxyOpen] = useState(false);
+  const [methodModalOpen, setMethodModalOpen] = useState(false);
   const [proxyChecking, setProxyChecking] = useState(false);
   const [proxyFailed, setProxyFailed] = useState<{ entry: ProxyEntry; message: string } | null>(
     null,
@@ -349,6 +371,7 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
   const proxyEnabled = useSettings((s) => s.settings?.proxyEnabled ?? false);
   const proxies = useSettings((s) => s.settings?.proxies ?? EMPTY_PROXIES);
   const proxyServices = useSettings((s) => s.settings?.proxyServices ?? EMPTY_SERVICES);
+  const preferredLoginMethod = useSettings((s) => s.settings?.preferredLoginMethod ?? EMPTY_PREFS);
   const proxyForThis =
     proxyEnabled &&
     proxies.length > 0 &&
@@ -484,10 +507,18 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
         proxyId,
         proxyTest,
       );
-      if (!res.ok) sess.fail(res.message ?? t('inventory.card.loginFailedFallback'));
+      if (!res.ok) {
+        const msg = res.message ?? t('inventory.card.loginFailedFallback');
+        if (isRateLimitMessage(msg)) setRateLimitedUntil(Date.now() + RATE_LIMIT_COOLDOWN_MS);
+        sess.fail(msg);
+      }
     } catch (err) {
       sess.fail(err instanceof Error ? err.message : t('inventory.card.callError'));
     }
+  };
+
+  const proceedWithProxy = (proxyId: string | null, proxyTest?: { ip: string; ms: number }) => {
+    void runLogin(proxyId, proxyTest ?? null);
   };
 
   const selectProxy = async (entry: ProxyEntry) => {
@@ -499,10 +530,11 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
         port: entry.port,
         username: entry.username,
         password: entry.password,
+        protocol: entry.protocol,
       });
       setProxyChecking(false);
       if (res.ok) {
-        void runLogin(entry.id, { ip: res.ip, ms: res.ms });
+        proceedWithProxy(entry.id, { ip: res.ip, ms: res.ms });
       } else {
         setProxyFailed({ entry, message: res.message });
       }
@@ -516,15 +548,14 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
   };
 
   const proceedAfterWarn = () => {
-    const canProxy =
-      proxyForThis && !(service === 'steam' && pendingMethodRef.current === 'native');
+    const nativeNoProxy = service === 'steam' && pendingMethodRef.current === 'native';
+    const canProxy = proxyForThis && !nativeNoProxy;
     if (canProxy) setProxyOpen(true);
-    else void runLogin(null);
+    else proceedWithProxy(null);
   };
 
-  const handleLogin = () => {
-    if (!service) return;
-    pendingMethodRef.current = loginMethodFor(service);
+  const startLoginWithMethod = (method: LoginMethod) => {
+    pendingMethodRef.current = method;
     // Steam sign-in may need to fetch the mafile (for a Steam Guard code), which
     // cancels the account's active warranty. Warn first when a warranty is live.
     if (service === 'steam' && warranty) {
@@ -532,6 +563,31 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
       return;
     }
     proceedAfterWarn();
+  };
+
+  const handleLogin = () => {
+    if (!service) return;
+    const methods = loginMethodsFor(service);
+    if (methods.length <= 1) {
+      startLoginWithMethod(methods[0] ?? loginMethodFor(service));
+      return;
+    }
+    const saved = item.category ? preferredLoginMethod[item.category] : undefined;
+    if (saved && methods.includes(saved)) {
+      startLoginWithMethod(saved);
+      return;
+    }
+    setMethodModalOpen(true);
+  };
+
+  const chooseMethod = (method: LoginMethod, remember: boolean) => {
+    setMethodModalOpen(false);
+    if (remember && item.category) {
+      void window.launcher.settings
+        .set({ preferredLoginMethod: { ...preferredLoginMethod, [item.category]: method } })
+        .then((next) => useSettings.getState().set(next.settings));
+    }
+    startLoginWithMethod(method);
   };
 
   const handleLoginViaBrowser = () => {
@@ -545,19 +601,39 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
     proceedAfterWarn();
   };
 
+  const handleLoginLlmViaBrowser = () => {
+    if (service !== 'llm') return;
+    setMenuOpen(false);
+    pendingMethodRef.current = 'web';
+    proceedAfterWarn();
+  };
+
+  // Open this account's email inbox on the Mail page (letters via the LZT API).
+  const openEmail = async () => {
+    setMenuOpen(false);
+    try {
+      const details = await window.launcher.accounts.get(item.itemId);
+      const secrets = (details?.secrets ?? {}) as Record<string, unknown>;
+      const eld = (secrets.emailLoginData ?? secrets.email_login_data) as
+        | { login?: string; password?: string }
+        | undefined;
+      const login = eld?.login ?? (secrets.account_login as string | undefined);
+      const password = eld?.password ?? (secrets.account_password as string | undefined);
+      if (!login || !password) return;
+      useMailTarget.getState().setPending(`${login}:${password}`);
+      useView.getState().setView('mail');
+    } catch {
+      // ignore — nothing to open
+    }
+  };
+
   return (
     <article className={s.card}>
       <div className={s.topSection}>
         <header className={s.head}>
           <div className={s.thumbBlock}>
-            {item.imageUrl ? (
-              <img className={s.logo} src={item.imageUrl} alt="" />
-            ) : categoryLogo ? (
-              <img className={s.logo} src={categoryLogo} alt="" />
-            ) : (
-              <Tag size={20} />
-            )}
-            <span className={s.category}>{item.categoryTitle}</span>
+            {thumbSrc ? <img className={s.logo} src={thumbSrc} alt="" /> : <Tag size={20} />}
+            <span className={s.category}>{categoryText}</span>
           </div>
           <div className={`${s.status} ${isInvalid ? s.statusInvalid : ''}`}>
             <span className={s.dot} />
@@ -637,11 +713,17 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
             <button
               type="button"
               className={`${s.login} ${isInvalid ? s.loginInvalid : ''}`}
-              disabled={!canLogin || busy}
+              disabled={!canLogin || busy || cooldownLeft > 0}
               onClick={handleLogin}
             >
               {busy ? <Loader2 size={16} className={s.spin} /> : <LogIn size={16} />}
-              <span>{busy ? t('inventory.card.busy') : t('inventory.card.login')}</span>
+              <span>
+                {busy
+                  ? t('inventory.card.busy')
+                  : cooldownLeft > 0
+                    ? t('inventory.card.rateLimited', { sec: cooldownLeft })
+                    : t('inventory.card.login')}
+              </span>
             </button>
           </Tooltip>
           <div className={s.menuWrap} ref={menuRef}>
@@ -698,6 +780,29 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
                     <span>{t('inventory.card.loginViaBrowser')}</span>
                   </button>
                 )}
+                {service === 'llm' && !llmUnsupported && (
+                  <button
+                    type="button"
+                    className={s.menuItem}
+                    role="menuitem"
+                    onClick={handleLoginLlmViaBrowser}
+                    disabled={!canLogin || busy}
+                  >
+                    <Globe size={16} />
+                    <span>{t('inventory.card.loginViaBrowser')}</span>
+                  </button>
+                )}
+                {item.hasEmailLogin && (
+                  <button
+                    type="button"
+                    className={s.menuItem}
+                    role="menuitem"
+                    onClick={() => void openEmail()}
+                  >
+                    <Mail size={16} />
+                    <span>{t('inventory.card.emailMenu')}</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   className={s.menuItem}
@@ -721,6 +826,14 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
           </div>
         </div>
       </div>
+
+      {methodModalOpen && service && (
+        <LoginMethodModal
+          methods={loginMethodsFor(service)}
+          onChoose={chooseMethod}
+          onCancel={() => setMethodModalOpen(false)}
+        />
+      )}
 
       {warnOpen && (
         <Modal title={t('inventory.card.warrantyWarnTitle')} onClose={() => setWarnOpen(false)}>
@@ -755,7 +868,7 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
               className={s.proxyOption}
               onClick={() => {
                 setProxyOpen(false);
-                void runLogin(null);
+                proceedWithProxy(null);
               }}
             >
               {t('inventory.card.proxy.none')}
@@ -843,7 +956,7 @@ const AccountCardImpl = ({ item }: AccountCardProps) => {
               className={s.warnConfirm}
               onClick={() => {
                 setProxyFailed(null);
-                void runLogin(null);
+                proceedWithProxy(null);
               }}
             >
               {t('inventory.card.proxy.continueNoProxy')}

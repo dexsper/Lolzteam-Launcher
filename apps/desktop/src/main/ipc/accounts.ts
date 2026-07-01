@@ -3,6 +3,7 @@ import type { AccountsCategoryEvent } from '@shared-ipc';
 import { SERVICE_CATEGORY_ID } from '@shared-types';
 import type { AccountScope, AccountSummary, ServiceId } from '@shared-types';
 import { type IpcMainInvokeEvent, ipcMain } from 'electron';
+import log from 'electron-log/main';
 import { onTokenChange } from '../auth/token-store';
 import {
   clearCachedAccounts,
@@ -17,6 +18,7 @@ import {
   listPurchasedAccounts,
   removeItemTag,
 } from '../services/market';
+import { getSettings } from '../settings/settings-store';
 
 const STREAM_ORDER: readonly ServiceId[] = [
   'steam',
@@ -24,6 +26,7 @@ const STREAM_ORDER: readonly ServiceId[] = [
   'tiktok',
   'instagram',
   'discord',
+  'llm',
 ] as const;
 
 let inflight: Promise<AccountSummary[]> | null = null;
@@ -85,16 +88,17 @@ const streamCategories = async (
     return unfiltered;
   };
   const scopeOf = (it: AccountSummary): AccountScope => it.scope ?? 'purchased';
-  try {
-    for (const serviceId of order) {
-      if (!alive()) return;
+
+  const loadService = async (serviceId: ServiceId): Promise<void> => {
+    if (!alive()) return;
+    try {
       const categoryId = SERVICE_CATEGORY_ID[serviceId];
       if (categoryId === undefined) {
         const items = (await getUnfiltered()).filter((it) => it.category === serviceId);
         all.push(...items);
         if (items.length > 0) send({ serviceId, scope, items, categoryDone: false, done: false });
         send({ serviceId, scope, items: [], categoryDone: true, done: false });
-        continue;
+        return;
       }
       await listAccountsByCategory(
         categoryId,
@@ -113,11 +117,32 @@ const streamCategories = async (
         },
         signal,
       );
-      if (!alive()) return;
-      send({ serviceId, scope, items: [], categoryDone: true, done: false });
+    } catch (err) {
+      if (signal.aborted) return; // a newer stream took over; don't mark done
+      log.warn(`[accounts] category ${serviceId} failed`, err);
     }
     if (!alive()) return;
+    send({ serviceId, scope, items: [], categoryDone: true, done: false });
+  };
+
+  try {
+    const settings = await getSettings();
+    const concurrency = Math.max(1, Math.min(4, settings.accountLoadConcurrency || 1));
+    const queue = [...order];
+    let next = 0;
+    const worker = async (): Promise<void> => {
+      while (alive()) {
+        const idx = next++;
+        if (idx >= queue.length) return;
+        const serviceId = queue[idx];
+        if (serviceId) await loadService(serviceId);
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(concurrency, queue.length) }, () => worker()));
+
+    if (!alive()) return;
     const cached = (await loadCachedAccounts())?.items ?? [];
+    if (!alive()) return; // a newer stream may have started during the await
     if (target) {
       // Replace just this scope+category slice; keep everything else.
       const kept = cached.filter((it) => !(scopeOf(it) === scope && it.category === target));

@@ -20,9 +20,12 @@ const baseDetails = (secrets: Record<string, unknown>, categoryRaw = 'tiktok'): 
   scope: 'purchased',
   steam: null,
   telegram: null,
+  llmService: null,
+  hasEmailLogin: false,
   loginRaw: null,
   passwordRaw: null,
   secrets,
+  owned: true,
 });
 
 const cookie = (over: Record<string, unknown> = {}) => ({

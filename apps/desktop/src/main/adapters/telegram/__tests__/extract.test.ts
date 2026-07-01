@@ -24,9 +24,12 @@ const baseDetails = (secrets: Record<string, unknown>): AccountDetails => ({
   scope: 'purchased',
   steam: null,
   telegram: null,
+  llmService: null,
+  hasEmailLogin: false,
   loginRaw: null,
   passwordRaw: null,
   secrets,
+  owned: true,
 });
 
 describe('extractTelegramCreds', () => {

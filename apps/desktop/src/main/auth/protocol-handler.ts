@@ -24,8 +24,24 @@ export const registerAuthFlow = (getWindow: GetWindow) => {
 
   const protocolPrefix = `${LOLZ_CONFIG.protocolScheme}://`;
 
+  const accountIdFromDeepLink = (url: string): number | null => {
+    const rest = url.slice(protocolPrefix.length);
+    const m = /^auth\/account\/(\d+)/.exec(rest);
+    return m?.[1] ? Number(m[1]) : null;
+  };
+
   return (url: string) => {
     if (!url.startsWith(protocolPrefix)) return;
+    const itemId = accountIdFromDeepLink(url);
+    if (itemId !== null) {
+      const win = getWindow();
+      if (win) {
+        if (win.isMinimized()) win.restore();
+        win.focus();
+        win.webContents.send(IPC_CHANNELS.ACCOUNT_LOGIN_REQUEST, { itemId });
+      }
+      return;
+    }
     void acceptAuthCallback(url, getWindow);
   };
 };

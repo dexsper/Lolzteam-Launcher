@@ -10,8 +10,8 @@ const credsByHostPort = new Map<string, ProxyCreds>();
 
 const hostPortKey = (host: string, port: number): string => `${host}:${port}`;
 
-export const proxyRulesFor = (entry: Pick<ProxyEntry, 'host' | 'port'>): string =>
-  `http://${entry.host}:${entry.port}`;
+export const proxyRulesFor = (entry: Pick<ProxyEntry, 'host' | 'port' | 'protocol'>): string =>
+  `${entry.protocol === 'https' ? 'https' : 'http'}://${entry.host}:${entry.port}`;
 
 const registerProxyCreds = (
   entry: Pick<ProxyEntry, 'host' | 'port' | 'username' | 'password'>,
@@ -62,7 +62,7 @@ const TEST_TIMEOUT_MS = 10_000;
 const TEST_URL = 'https://api.ipify.org?format=json';
 
 export const testProxy = (
-  input: Pick<ProxyEntry, 'host' | 'port' | 'username' | 'password'>,
+  input: Pick<ProxyEntry, 'host' | 'port' | 'username' | 'password' | 'protocol'>,
 ): Promise<ProxyTestResult> => {
   return new Promise<ProxyTestResult>((resolve) => {
     const ses = session.fromPartition(`proxy-test-${randomUUID()}`);

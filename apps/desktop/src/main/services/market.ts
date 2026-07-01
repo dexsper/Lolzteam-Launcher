@@ -1,6 +1,6 @@
 import { MarketClient } from '@market-sdk';
 import type { RawLetter, RawMarketItem, RawProfileResponse, RawUserTag } from '@market-sdk';
-import { categoryNameToServiceId } from '@shared-types';
+import { categoryIdToServiceId, categoryNameToServiceId, detectLlmService } from '@shared-types';
 import type {
   AccountDetails,
   AccountScope,
@@ -327,7 +327,9 @@ const pickCategoryTitle = (item: RawMarketItem): string => {
 
 const normalizeItem = (item: RawMarketItem, scope: AccountScope): AccountSummary => {
   const categoryRaw = pickCategoryRaw(item);
-  const category = categoryNameToServiceId(categoryRaw);
+  // Resolve by name first; fall back to the numeric category id so a category
+  // with an unexpected name string (e.g. LLM, id 6) still maps to its service.
+  const category = categoryNameToServiceId(categoryRaw) ?? categoryIdToServiceId(item.category_id);
   return {
     itemId: item.item_id,
     category,
@@ -346,6 +348,21 @@ const normalizeItem = (item: RawMarketItem, scope: AccountScope): AccountSummary
     scope,
     steam: extractSteamInfo(item, category),
     telegram: extractTelegramInfo(item, category),
+    llmService:
+      category === 'llm'
+        ? detectLlmService(
+            typeof item.llm_service === 'string' ? item.llm_service : null,
+            item.title,
+            item.title_en,
+            item.description,
+          )
+        : null,
+    hasEmailLogin: Boolean(
+      item.emailLoginData?.login ||
+        item.email_login_data?.login ||
+        item.canViewEmailLoginData ||
+        item.can_view_email_login_data,
+    ),
   };
 };
 
@@ -544,8 +561,18 @@ export const getAccountDetails = async (itemId: number): Promise<AccountDetails 
     const summary = normalizeItem(item, 'purchased');
     const loginRaw = pickLoginRaw(item, summary.category);
     const passwordRaw = pickPasswordRaw(item, summary.category);
+    // Ownership uses the market's own authoritative flags, NOT credential
+    // presence (which varies by category and state):
+    //   - `buyer.visitorIsBuyer === true`  → we bought this account
+    //   - `visitorIsAuthor === true`        → it's our own listing
+    // `item.buyer` alone is NOT enough: it's set for any item sold to *someone*,
+    // so a stranger's already-sold listing has `buyer` present but
+    // `visitorIsBuyer === false`. Both flags being false means it isn't ours.
+    const anyItem = item as unknown as Record<string, unknown>;
+    const buyer = anyItem.buyer as { visitorIsBuyer?: boolean } | null | undefined;
+    const owned = buyer?.visitorIsBuyer === true || anyItem.visitorIsAuthor === true;
     log.debug(
-      `[market] item #${itemId} category=${summary.categoryRaw} ` +
+      `[market] item #${itemId} category=${summary.categoryRaw} owned=${owned} ` +
         `loginRaw=${loginRaw ? 'present' : 'missing'} ` +
         `passwordRaw=${passwordRaw ? 'present' : 'missing'}`,
     );
@@ -554,6 +581,7 @@ export const getAccountDetails = async (itemId: number): Promise<AccountDetails 
       loginRaw,
       passwordRaw,
       secrets: item,
+      owned,
     };
   } catch (err) {
     log.warn('[market] getAccountDetails failed', err);
@@ -750,4 +778,56 @@ export const fetchLetters = async (req: MailLettersRequest): Promise<MailLetters
     }
   }
   return { ok: false, message: 'retry_request' };
+};
+
+export interface MarketProxy {
+  protocol: 'http' | 'https';
+  host: string;
+  port: number;
+  username?: string;
+  password?: string;
+}
+
+const asStr = (v: unknown): string | undefined =>
+  typeof v === 'string' && v.trim() ? v.trim() : typeof v === 'number' ? String(v) : undefined;
+
+const normalizeProxy = (raw: unknown): MarketProxy | null => {
+  if (!raw || typeof raw !== 'object') return null;
+  const o = raw as Record<string, unknown>;
+  const host = asStr(o.proxy_ip ?? o.ip ?? o.host ?? o.address ?? o.server);
+  const portStr = asStr(o.proxy_port ?? o.port);
+  const port = portStr ? Number(portStr) : Number.NaN;
+  if (!host || !Number.isInteger(port) || port <= 0 || port > 65535) return null;
+  const type = (asStr(o.proxy_type ?? o.type ?? o.protocol) ?? 'http').toLowerCase();
+  return {
+    protocol: type.includes('https') ? 'https' : 'http',
+    host,
+    port,
+    username: asStr(o.proxy_user ?? o.username ?? o.user ?? o.login),
+    password: asStr(o.proxy_pass ?? o.password ?? o.pass),
+  };
+};
+
+const collectProxyRecords = (data: unknown): unknown[] => {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object') {
+    const o = data as Record<string, unknown>;
+    for (const key of ['proxies', 'proxy', 'items', 'data']) {
+      const v = o[key];
+      if (Array.isArray(v)) return v;
+      if (v && typeof v === 'object') return Object.values(v as Record<string, unknown>);
+    }
+  }
+  return [];
+};
+
+export const fetchMarketProxies = async (): Promise<MarketProxy[]> => {
+  const token = await loadToken();
+  if (!token) throw new Error('not_authenticated');
+  const data = await getClient().listProxies();
+  const list = collectProxyRecords(data)
+    .map(normalizeProxy)
+    .filter((p): p is MarketProxy => p !== null);
+  log.info(`[market] fetched ${list.length} proxy(ies) from forum`);
+  return list;
 };

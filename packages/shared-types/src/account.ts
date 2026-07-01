@@ -1,3 +1,4 @@
+import type { LlmServiceId } from './llm-service';
 import type { ServiceId } from './service-id';
 
 export interface SteamGame {
@@ -126,10 +127,18 @@ export interface AccountSummary {
   steam: SteamInfo | null;
   /** Present only for Telegram items; null when fields are unavailable. */
   telegram: TelegramInfo | null;
+  /** For LLM (category 6) items: the detected sub-service (claude/chatgpt/…). */
+  llmService: LlmServiceId | null;
+  /** True when the account exposes a viewable email inbox (login:password). */
+  hasEmailLogin: boolean;
 }
 
 export interface AccountDetails extends AccountSummary {
   loginRaw: string | null;
   passwordRaw: string | null;
   secrets: Record<string, unknown>;
+  /** Whether the API returned this account's private data — i.e. the current
+   *  user owns/purchased it. False for a stranger's public listing (a deep link
+   *  can carry any item id, so this is checked before offering a login). */
+  owned: boolean;
 }

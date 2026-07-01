@@ -38,6 +38,11 @@ export interface RawMarketItem {
   account_login?: string;
   account_password?: string;
   loginData?: RawMarketLoginData;
+  /** Present when the account ships a viewable email inbox (login:password). */
+  emailLoginData?: { login?: string; password?: string; raw?: string };
+  email_login_data?: { login?: string; password?: string; raw?: string };
+  canViewEmailLoginData?: boolean;
+  can_view_email_login_data?: boolean;
   telegram_password_value?: string;
   telegram_phone?: string;
   telegram_username?: string;

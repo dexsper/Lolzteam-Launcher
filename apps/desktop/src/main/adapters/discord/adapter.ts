@@ -11,6 +11,7 @@ import { applyProxyToSession, clearProxyFromSession } from '../../services/proxy
 import { MAIN_COLORS } from '../../theme';
 import { failLogin as fail } from '../_shared/fail';
 import { createBrowserShell } from '../browser/browser-shell';
+import { emailPasswordFor } from '../llm/extract';
 import { extractDiscordToken } from './extract';
 
 const LOGIN_URL = 'https://discord.com/login';
@@ -103,6 +104,7 @@ export const discordAdapter: ServiceAdapter = {
       log: ctx.log,
       proxy: ctx.proxy,
       proxyTest: ctx.proxyTest,
+      emailPassword: emailPasswordFor(account) ?? undefined,
     });
     const site = siteView.webContents;
 

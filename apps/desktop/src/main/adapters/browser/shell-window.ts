@@ -1,5 +1,5 @@
 import type { AdapterContext } from '@adapter-contract';
-import { BrowserWindow, session } from 'electron';
+import { BrowserWindow, type WebContents, session } from 'electron';
 import { applyProxyToSession, clearProxyFromSession } from '../../services/proxy';
 import { MAIN_COLORS } from '../../theme';
 import { createBrowserShell } from './browser-shell';
@@ -34,6 +34,7 @@ export const openBrowserWindow = (
   landingUrl: string,
   title: string,
   ctx: AdapterContext,
+  opts?: { onEachLoad?: (site: WebContents) => void; emailPassword?: string },
 ): { windowId: number } => {
   const win = new BrowserWindow({
     width: 1180,
@@ -55,7 +56,11 @@ export const openBrowserWindow = (
     log: ctx.log,
     proxy: ctx.proxy,
     proxyTest: ctx.proxyTest,
+    emailPassword: opts?.emailPassword,
   });
+  if (opts?.onEachLoad) {
+    siteView.webContents.on('did-finish-load', () => opts.onEachLoad?.(siteView.webContents));
+  }
   siteView.webContents.loadURL(landingUrl).catch((err: unknown) => {
     const msg = err instanceof Error ? err.message : String(err);
     ctx.log.warn(`[browser] loadURL failed: ${msg}`);

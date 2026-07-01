@@ -2,12 +2,26 @@ import { EventEmitter } from 'node:events';
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
 import { DEFAULT_SETTINGS, type LauncherSettings } from '@shared-types';
-import { app } from 'electron';
+import { app, safeStorage } from 'electron';
 import log from 'electron-log/main';
 
 const FILE_NAME = 'settings.json';
 
 const settingsFile = () => join(app.getPath('userData'), FILE_NAME);
+
+const serialize = (json: string): Buffer =>
+  safeStorage.isEncryptionAvailable() ? safeStorage.encryptString(json) : Buffer.from(json, 'utf8');
+
+const deserialize = (buf: Buffer): string => {
+  if (safeStorage.isEncryptionAvailable()) {
+    try {
+      return safeStorage.decryptString(buf);
+    } catch {
+      // Legacy plaintext settings written before encryption landed.
+    }
+  }
+  return buf.toString('utf8');
+};
 
 class SettingsStore extends EventEmitter {
   private cached: LauncherSettings | null = null;
@@ -15,11 +29,14 @@ class SettingsStore extends EventEmitter {
   async load(): Promise<LauncherSettings> {
     if (this.cached) return this.cached;
     try {
-      const raw = await fs.readFile(settingsFile(), 'utf8');
+      const raw = deserialize(await fs.readFile(settingsFile()));
       const parsed = JSON.parse(raw) as Partial<LauncherSettings>;
       const merged = { ...DEFAULT_SETTINGS, ...parsed };
       if (merged.locale !== 'ru' && merged.locale !== 'en') {
         merged.locale = DEFAULT_SETTINGS.locale;
+      }
+      if (Array.isArray(merged.proxyServices) && !merged.proxyServices.includes('llm')) {
+        merged.proxyServices = [...merged.proxyServices, 'llm'];
       }
       this.cached = merged;
     } catch (err: unknown) {
@@ -36,10 +53,7 @@ class SettingsStore extends EventEmitter {
   async update(patch: Partial<LauncherSettings>): Promise<LauncherSettings> {
     const current = await this.load();
     const next: LauncherSettings = { ...current, ...patch };
-    await fs.writeFile(settingsFile(), JSON.stringify(next, null, 2), {
-      encoding: 'utf8',
-      mode: 0o600,
-    });
+    await fs.writeFile(settingsFile(), serialize(JSON.stringify(next)), { mode: 0o600 });
     this.cached = next;
     this.emit('change', next);
     return next;

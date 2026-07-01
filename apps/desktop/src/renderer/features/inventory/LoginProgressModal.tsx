@@ -39,6 +39,11 @@ const buildSteps = (t: TFunction): Record<LoginService, readonly StepDef[]> => (
     { step: 'injecting-token', label: t('loginSteps.injectingToken') },
     { step: 'launching-browser', label: t('loginSteps.launchingBrowser') },
   ],
+  llm: [
+    { step: 'fetching-credentials', label: t('loginSteps.fetchingCredentials') },
+    { step: 'injecting-cookies', label: t('loginSteps.injectingCookies') },
+    { step: 'launching-browser', label: t('loginSteps.launchingBrowser') },
+  ],
 });
 
 // Steam "open in browser" reuses the credential flow but lands in the in-app
@@ -163,9 +168,11 @@ export const LoginProgressModal = () => {
                 ? 'Telegram'
                 : svc === 'discord'
                   ? 'Discord'
-                  : svc === 'browser'
-                    ? t('loginModal.browserService')
-                    : 'Steam',
+                  : svc === 'llm'
+                    ? 'Claude'
+                    : svc === 'browser'
+                      ? t('loginModal.browserService')
+                      : 'Steam',
           })}
         </div>
       )}

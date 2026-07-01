@@ -71,6 +71,17 @@
     "busyBrowser": "Opening browser…",
     "hint": "Authorization runs through lzt.market OAuth. The token is stored locally, encrypted by the system keystore (DPAPI on Windows / Keychain on macOS)."
   },
+  "deepLink": {
+    "title": "Sign in via extension",
+    "body": "Sign in to account \"{{title}}\"?",
+    "confirm": "Sign in",
+    "cancel": "Cancel",
+    "close": "Close",
+    "loading": "Loading account data…",
+    "notFound": "Account not found or not purchased by you",
+    "notOwned": "This account isn't yours",
+    "unsupported": "Signing into {{service}} isn't supported yet"
+  },
   "connection": {
     "title": "No connection to the API",
     "subtitle": "Can't reach the API. Check your internet or use a VPN — lzt.market may be blocked by your ISP. Then press \"Retry\".",
@@ -107,6 +118,9 @@
     "emptyUnsupported": "Your inventory has no accounts for supported services (Steam, Telegram).",
     "openMarket": "Open lzt.market",
     "refresh": "Refresh",
+    "llmService": {
+      "all": "All services"
+    },
     "searchPlaceholder": "Search by name, game, country…",
     "searchClear": "Clear search",
     "noResults": "No accounts match your search.",
@@ -143,11 +157,19 @@
       "warrantyHours_other": "{{count}} hours warranty",
       "login": "Sign in",
       "loginViaBrowser": "Sign in via browser",
+      "loginMethod": {
+        "title": "How do you want to sign in?",
+        "native": "Via the app",
+        "web": "Via browser",
+        "remember": "Remember my choice"
+      },
       "labelsMenu": "Labels",
+      "emailMenu": "Email",
       "labelsTitle": "Account labels",
       "labelsEmpty": "You don't have any labels yet. Create them on the website, then refresh the list.",
       "labelsManageWeb": "Manage labels on the website",
       "busy": "Launching…",
+      "rateLimited": "Rate limit · {{sec}}s",
       "loginTooltip": "Sign in to this account",
       "loginInvalidTooltip": "Account is invalid — sign-in may fail",
       "unsupportedTooltip": "Service not supported yet",
@@ -218,7 +240,15 @@
     "heading": "Settings",
     "subheading": "Launcher options and connected services",
     "app": {
-      "title": "Application"
+      "title": "Application",
+      "refreshOnLaunchLabel": "Refresh accounts on launch",
+      "refreshOnLaunchHint": "Re-fetch your account list every time the app starts.",
+      "backgroundRefreshLabel": "Background refresh",
+      "backgroundRefreshHint": "Auto-refresh the account list on an interval while running.",
+      "concurrencyLabel": "Account load threads",
+      "concurrencyHint": "How many categories to load at once.",
+      "minimizeToTrayLabel": "Minimize to tray",
+      "minimizeToTrayHint": "Keep the app running in the tray when you close the window."
     },
     "profile": {
       "title": "Profile",
@@ -308,6 +338,17 @@
       "confirmOk": "Clear",
       "confirmCancel": "Cancel"
     },
+    "loginMethods": {
+      "menuLabel": "Sign-in methods",
+      "menuHint": "Choose the method for accounts that support more than one",
+      "back": "Back",
+      "hint": "What “Sign in” does: ask each time, or go straight with the chosen method.",
+      "ask": "Ask",
+      "native": "Via the app",
+      "web": "Via browser",
+      "steamLabel": "Steam",
+      "steamHint": "Sign into the Steam client or the in-app browser."
+    },
     "proxy": {
       "menuLabel": "Proxy",
       "menuHint": "HTTP proxy list and pick-on-login",
@@ -322,6 +363,9 @@
       "servicesHint": "A proxy will only be offered for the selected services. For Steam, the proxy applies only to browser sign-in.",
       "addTitle": "Add proxies",
       "addLabel": "Add proxies",
+      "loadFromForum": "Load from forum",
+      "forumAdded": "Added {{count}} proxy(ies) from the forum",
+      "forumFailed": "Couldn't load proxies from the forum",
       "checkOnAdd": "Check validity",
       "bulkPlaceholder": "ip:port or ip:port:login:password - one per line",
       "listEmpty": "Proxy list is empty",

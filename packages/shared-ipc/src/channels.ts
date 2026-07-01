@@ -82,6 +82,7 @@ export const IPC_CHANNELS = {
   ACCOUNT_LOGIN: 'account:login',
   ACCOUNT_LOGIN_CANCEL: 'account:login-cancel',
   ACCOUNT_LOGIN_PROGRESS: 'account:login-progress',
+  ACCOUNT_LOGIN_REQUEST: 'account:login-request',
   ACCOUNT_CHECK: 'account:check',
   ACCOUNT_ADD_TAG: 'account:add-tag',
   ACCOUNT_REMOVE_TAG: 'account:remove-tag',
@@ -95,6 +96,7 @@ export const IPC_CHANNELS = {
   PROFILE_LABEL_REORDER: 'profile:label-reorder',
 
   MAIL_GET_LETTERS: 'mail:get-letters',
+  MAIL_OPEN_REQUEST: 'mail:open-request',
 
   SETTINGS_GET: 'settings:get',
   SETTINGS_SET: 'settings:set',
@@ -104,6 +106,7 @@ export const IPC_CHANNELS = {
   STEAM_CLEAR_SESSION: 'steam:clear-session',
 
   PROXY_TEST: 'proxy:test',
+  PROXY_FETCH_MARKET: 'proxy:fetch-market',
 
   BROWSER_NAV_BACK: 'browser-nav:back',
   BROWSER_NAV_FORWARD: 'browser-nav:forward',
@@ -115,6 +118,7 @@ export const IPC_CHANNELS = {
   BROWSER_NAV_EXPAND: 'browser-nav:expand',
   BROWSER_NAV_COLLAPSE: 'browser-nav:collapse',
   BROWSER_NAV_PROXY_RETEST: 'browser-nav:proxy-retest',
+  BROWSER_NAV_OPEN_EMAIL: 'browser-nav:open-email',
   BROWSER_NAV_STATE: 'browser-nav:state',
 
   APP_OPEN_EXTERNAL: 'app:open-external',
@@ -165,7 +169,11 @@ export interface IpcRequestMap {
   [IPC_CHANNELS.SETTINGS_SET]: Partial<LauncherSettings>;
   [IPC_CHANNELS.SETTINGS_PICK_FILE]: PickFileOptions;
   [IPC_CHANNELS.STEAM_CLEAR_SESSION]: undefined;
-  [IPC_CHANNELS.PROXY_TEST]: Pick<ProxyEntry, 'host' | 'port' | 'username' | 'password'>;
+  [IPC_CHANNELS.PROXY_TEST]: Pick<
+    ProxyEntry,
+    'host' | 'port' | 'username' | 'password' | 'protocol'
+  >;
+  [IPC_CHANNELS.PROXY_FETCH_MARKET]: undefined;
   [IPC_CHANNELS.BROWSER_NAV_BACK]: undefined;
   [IPC_CHANNELS.BROWSER_NAV_FORWARD]: undefined;
   [IPC_CHANNELS.BROWSER_NAV_RELOAD]: undefined;
@@ -176,6 +184,7 @@ export interface IpcRequestMap {
   [IPC_CHANNELS.BROWSER_NAV_EXPAND]: undefined;
   [IPC_CHANNELS.BROWSER_NAV_COLLAPSE]: undefined;
   [IPC_CHANNELS.BROWSER_NAV_PROXY_RETEST]: undefined;
+  [IPC_CHANNELS.BROWSER_NAV_OPEN_EMAIL]: undefined;
   [IPC_CHANNELS.APP_OPEN_EXTERNAL]: { url: string };
   [IPC_CHANNELS.APP_PING_API]: undefined;
   [IPC_CHANNELS.APP_GET_VERSION]: undefined;
@@ -214,6 +223,11 @@ export interface IpcResponseMap {
   [IPC_CHANNELS.SETTINGS_PICK_FILE]: string | null;
   [IPC_CHANNELS.STEAM_CLEAR_SESSION]: { ok: boolean; message?: string };
   [IPC_CHANNELS.PROXY_TEST]: ProxyTestResult;
+  [IPC_CHANNELS.PROXY_FETCH_MARKET]: {
+    ok: boolean;
+    proxies?: Array<Pick<ProxyEntry, 'protocol' | 'host' | 'port' | 'username' | 'password'>>;
+    message?: string;
+  };
   [IPC_CHANNELS.BROWSER_NAV_BACK]: undefined;
   [IPC_CHANNELS.BROWSER_NAV_FORWARD]: undefined;
   [IPC_CHANNELS.BROWSER_NAV_RELOAD]: undefined;
@@ -224,6 +238,7 @@ export interface IpcResponseMap {
   [IPC_CHANNELS.BROWSER_NAV_EXPAND]: undefined;
   [IPC_CHANNELS.BROWSER_NAV_COLLAPSE]: undefined;
   [IPC_CHANNELS.BROWSER_NAV_PROXY_RETEST]: ProxyTestResult;
+  [IPC_CHANNELS.BROWSER_NAV_OPEN_EMAIL]: undefined;
   [IPC_CHANNELS.APP_OPEN_EXTERNAL]: undefined;
   [IPC_CHANNELS.APP_PING_API]: NetworkStatus;
   [IPC_CHANNELS.APP_GET_VERSION]: string;
@@ -238,10 +253,12 @@ export interface IpcEventMap {
   [IPC_CHANNELS.AUTH_TOKEN_RECEIVED]: AuthTokenPayload;
   [IPC_CHANNELS.AUTH_STATUS_CHANGED]: AuthStatus;
   [IPC_CHANNELS.ACCOUNT_LOGIN_PROGRESS]: LoginProgress;
+  [IPC_CHANNELS.ACCOUNT_LOGIN_REQUEST]: { itemId: number };
   [IPC_CHANNELS.ACCOUNTS_CATEGORY]: AccountsCategoryEvent;
   [IPC_CHANNELS.SETTINGS_CHANGED]: SettingsResponse;
   [IPC_CHANNELS.UPDATE_STATUS]: UpdateStatus;
   [IPC_CHANNELS.BROWSER_NAV_STATE]: BrowserNavState;
+  [IPC_CHANNELS.MAIL_OPEN_REQUEST]: { emailPassword: string };
 }
 
 export type { AuthTokenPayload };

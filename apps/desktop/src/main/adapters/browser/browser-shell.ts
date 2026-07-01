@@ -6,6 +6,7 @@ import { IPC_CHANNELS } from '@shared-ipc';
 import type { ProxyEntry } from '@shared-types';
 import { type BrowserWindow, WebContentsView, clipboard, ipcMain, shell } from 'electron';
 import { testProxy } from '../../services/proxy';
+import { getMainWindow, showMainWindow } from '../../window/main-window';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
@@ -22,6 +23,7 @@ interface ShellController {
   expand: () => void;
   collapse: () => void;
   proxyRetest: () => Promise<ProxyTestResult>;
+  openEmail: () => void;
 }
 
 const controllers = new Map<number, ShellController>();
@@ -45,6 +47,7 @@ const wireHandlers = (): void => {
     if (!ctl) return { ok: false, message: 'toolbar gone' } satisfies ProxyTestResult;
     return ctl.proxyRetest();
   });
+  ipcMain.handle(IPC_CHANNELS.BROWSER_NAV_OPEN_EMAIL, (e) => get(e.sender.id)?.openEmail());
 };
 
 // Turn raw address-bar input into a safe URL. Only http/https are allowed;
@@ -94,6 +97,8 @@ export const createBrowserShell = (
     log: AdapterLogger;
     proxy?: ProxyEntry;
     proxyTest?: { ip: string; ms: number };
+    /** When set, the toolbar shows an email icon that opens this mailbox. */
+    emailPassword?: string;
   },
 ): { siteView: WebContentsView } => {
   wireHandlers();
@@ -194,10 +199,19 @@ export const createBrowserShell = (
       layout();
     },
     proxyRetest,
+    openEmail: () => {
+      if (!opts.emailPassword) return;
+      showMainWindow();
+      getMainWindow()?.webContents.send(IPC_CHANNELS.MAIL_OPEN_REQUEST, {
+        emailPassword: opts.emailPassword,
+      });
+    },
   });
 
   toolbarView.webContents.on('did-finish-load', pushState);
-  loadToolbar(toolbarView, opts.proxy ? buildProxyQuery(opts.proxy, opts.proxyTest) : '');
+  const params = new URLSearchParams(opts.proxy ? buildProxyQuery(opts.proxy, opts.proxyTest) : '');
+  if (opts.emailPassword) params.set('email', '1');
+  loadToolbar(toolbarView, params.toString());
 
   const onResize = (): void => layout();
   win.on('resize', onResize);
@@ -205,6 +219,10 @@ export const createBrowserShell = (
   win.on('closed', () => {
     win.off('resize', onResize);
     controllers.delete(toolbarView.webContents.id);
+    site.removeAllListeners();
+    for (const view of [siteView, toolbarView]) {
+      if (!view.webContents.isDestroyed()) view.webContents.close();
+    }
   });
 
   return { siteView };

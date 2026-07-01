@@ -56,6 +56,12 @@ export class MarketClient {
     return this.http.get('user/orders', { searchParams: search, signal }).json<RawOrdersResponse>();
   }
 
+  /** `Get Proxy` — the user's saved proxy list. Shape is not modeled; the caller
+   * validates defensively. */
+  async listProxies(signal?: AbortSignal): Promise<unknown> {
+    return this.http.get('proxy', { signal }).json<unknown>();
+  }
+
   /** `List.User` — accounts the authenticated user owns (listings + purchases). */
   async listUser(
     params: { page?: number; categoryId?: number; show?: string } = {},

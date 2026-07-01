@@ -44,4 +44,12 @@ export const SERVICE_CATEGORY_ID: Partial<Record<ServiceId, number>> = {
   tiktok: 20,
   instagram: 10,
   discord: 22,
+  llm: 6,
 };
+
+const CATEGORY_ID_TO_SERVICE: Record<number, ServiceId> = Object.fromEntries(
+  Object.entries(SERVICE_CATEGORY_ID).map(([service, id]) => [id, service as ServiceId]),
+);
+
+export const categoryIdToServiceId = (id: number | undefined | null): ServiceId | null =>
+  typeof id === 'number' ? (CATEGORY_ID_TO_SERVICE[id] ?? null) : null;

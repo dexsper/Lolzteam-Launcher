@@ -2,14 +2,28 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BrowserWindow, shell } from 'electron';
 import iconUrl from '../../renderer/assets/favicon.ico?asset';
+import { getCachedSettings } from '../settings/settings-store';
 import { MAIN_COLORS } from '../theme';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 let mainWindow: BrowserWindow | null = null;
 
+let quitting = false;
+export const setQuitting = (v: boolean): void => {
+  quitting = v;
+};
+export const isQuitting = (): boolean => quitting;
+
 export const getMainWindow = (): BrowserWindow | null =>
   mainWindow && !mainWindow.isDestroyed() ? mainWindow : null;
+
+export const showMainWindow = (): void => {
+  const win = mainWindow && !mainWindow.isDestroyed() ? mainWindow : createMainWindow();
+  if (win.isMinimized()) win.restore();
+  win.show();
+  win.focus();
+};
 
 export const createMainWindow = (): BrowserWindow => {
   if (mainWindow && !mainWindow.isDestroyed()) {
@@ -33,12 +47,21 @@ export const createMainWindow = (): BrowserWindow => {
       sandbox: true,
       nodeIntegration: false,
       webSecurity: true,
+      backgroundThrottling: false,
     },
   });
 
   mainWindow.setMenu(null);
 
   mainWindow.on('ready-to-show', () => mainWindow?.show());
+  mainWindow.on('close', (e) => {
+    if (quitting) return;
+    const minimize = getCachedSettings()?.minimizeToTray ?? true;
+    if (minimize) {
+      e.preventDefault();
+      mainWindow?.hide();
+    }
+  });
   mainWindow.on('closed', () => {
     mainWindow = null;
   });

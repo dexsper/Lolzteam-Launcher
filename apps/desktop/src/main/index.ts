@@ -15,8 +15,10 @@ import { registerSettingsIpc } from './ipc/settings';
 import { registerSteamIpc } from './ipc/steam';
 import { initAppProxy } from './services/api-session';
 import { registerProxyAuthHandler } from './services/proxy';
+import { getCachedSettings } from './settings/settings-store';
 import { registerUpdaterIpc } from './updater';
-import { createMainWindow, getMainWindow } from './window/main-window';
+import { createMainWindow, getMainWindow, setQuitting, showMainWindow } from './window/main-window';
+import { createTray } from './window/tray';
 
 log.initialize();
 log.transports.file.level = 'info';
@@ -41,11 +43,7 @@ const consumeDeepLinks = (argv: string[]) => {
 };
 
 app.on('second-instance', (_event, argv) => {
-  const win = getMainWindow();
-  if (win) {
-    if (win.isMinimized()) win.restore();
-    win.focus();
-  }
+  showMainWindow();
   consumeDeepLinks(argv);
 });
 
@@ -62,6 +60,11 @@ app.whenReady().then(async () => {
   await initAppProxy();
 
   const win = createMainWindow();
+  try {
+    createTray();
+  } catch (err) {
+    log.warn('[boot] tray init failed', err);
+  }
   handleDeepLink = registerAuthFlow(() => getMainWindow());
   registerInAppAuth(() => getMainWindow());
   registerAuthIpc();
@@ -83,6 +86,9 @@ app.whenReady().then(async () => {
   log.info(`[boot] window created (${win.id})`);
 });
 
+app.on('before-quit', () => setQuitting(true));
+
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+  const minimize = getCachedSettings()?.minimizeToTray ?? true;
+  if (process.platform !== 'darwin' && !minimize) app.quit();
 });

@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   Check,
   ChevronDown,
+  CloudDownload,
   Loader2,
   Pencil,
   Plus,
@@ -25,6 +26,7 @@ const SERVICE_LABELS: Record<string, string> = {
   tiktok: 'TikTok',
   instagram: 'Instagram',
   discord: 'Discord',
+  llm: 'Claude',
 };
 
 interface ProxyViewProps {
@@ -44,6 +46,8 @@ export const ProxyView = ({ onBack }: ProxyViewProps) => {
   const [bulkCheck, setBulkCheck] = useState<{ done: number; total: number } | null>(null);
   const [liveResults, setLiveResults] = useState<Record<string, ProxyTestResult>>({});
   const [appSelectOpen, setAppSelectOpen] = useState(false);
+  const [forumLoading, setForumLoading] = useState(false);
+  const [forumMsg, setForumMsg] = useState<string | null>(null);
   const appSelectRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -133,6 +137,34 @@ export const ProxyView = ({ onBack }: ProxyViewProps) => {
     if (checkOnAdd) await Promise.all(parsed.map((p) => testProxy(p)));
   };
 
+  const loadFromForum = async () => {
+    if (forumLoading) return;
+    setForumLoading(true);
+    setForumMsg(null);
+    try {
+      const res = await window.launcher.proxy.fetchMarket();
+      if (!res.ok) {
+        setForumMsg(t('settings.proxy.forumFailed'));
+        return;
+      }
+      const seen = new Set(proxiesRef.current.map(proxyKey));
+      const added: ProxyEntry[] = [];
+      for (const p of res.proxies ?? []) {
+        const key = proxyKey(p);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        added.push({ ...p, id: crypto.randomUUID() });
+      }
+      if (added.length > 0) await persist({ proxies: [...proxiesRef.current, ...added] });
+      setForumMsg(t('settings.proxy.forumAdded', { count: added.length }));
+      if (checkOnAdd && added.length > 0) await Promise.all(added.map((p) => testProxy(p)));
+    } catch {
+      setForumMsg(t('settings.proxy.forumFailed'));
+    } finally {
+      setForumLoading(false);
+    }
+  };
+
   const removeProxy = (id: string) => {
     void persist({ proxies: proxiesRef.current.filter((p) => p.id !== id) });
   };
@@ -157,6 +189,7 @@ export const ProxyView = ({ onBack }: ProxyViewProps) => {
         port: entry.port,
         username: entry.username,
         password: entry.password,
+        protocol: entry.protocol,
       });
       return {
         ok: res.ok,
@@ -400,7 +433,21 @@ export const ProxyView = ({ onBack }: ProxyViewProps) => {
               </span>
               <span>{t('settings.proxy.checkOnAdd')}</span>
             </button>
+            <button
+              type="button"
+              className={s.addBtn}
+              onClick={() => void loadFromForum()}
+              disabled={forumLoading}
+            >
+              {forumLoading ? (
+                <Loader2 size={16} className={s.spin} />
+              ) : (
+                <CloudDownload size={16} />
+              )}
+              <span>{t('settings.proxy.loadFromForum')}</span>
+            </button>
           </div>
+          {forumMsg && <p className={s.forumMsg}>{forumMsg}</p>}
         </div>
 
         <div className={s.proxyBlock}>
@@ -576,6 +623,8 @@ const ProxyEditForm = ({ entry, onCancel, onSave }: ProxyEditFormProps) => {
     if (!valid) return;
     onSave({
       id: entry.id,
+      ...(entry.protocol ? { protocol: entry.protocol } : {}),
+      ...(entry.label ? { label: entry.label } : {}),
       host: host.trim(),
       port: portNum,
       ...(username.trim() ? { username: username.trim() } : {}),

@@ -22,7 +22,7 @@ export interface BrowserLoginData {
 }
 
 // Raw cookie shape as the market returns it (chrome-extension export format).
-interface RawCookie {
+export interface RawCookie {
   name?: unknown;
   value?: unknown;
   domain?: unknown;
@@ -52,7 +52,7 @@ const cookieUrl = (domain: string, path: string, secure: boolean): string => {
   return `${scheme}://${host}${path.startsWith('/') ? path : `/${path}`}`;
 };
 
-const toInjectable = (raw: RawCookie): InjectableCookie | null => {
+export const toInjectable = (raw: RawCookie): InjectableCookie | null => {
   const name = asString(raw.name);
   const domain = asString(raw.domain);
   if (!name || domain === null) return null;
@@ -85,7 +85,7 @@ const toInjectable = (raw: RawCookie): InjectableCookie | null => {
 
 // Cookies can arrive either as a parsed array or as a JSON string (the
 // single-item endpoint tends to return the latter). Coerce both to an array.
-const asCookieArray = (raw: unknown): unknown[] | null => {
+export const asCookieArray = (raw: unknown): unknown[] | null => {
   if (Array.isArray(raw)) return raw;
   if (typeof raw === 'string' && raw.trim()) {
     try {

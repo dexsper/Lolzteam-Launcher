@@ -7,6 +7,7 @@ import type {
 } from '@adapter-contract';
 import type { AccountDetails, ServiceId } from '@shared-types';
 import { failLogin as fail } from '../_shared/fail';
+import { emailPasswordFor } from '../llm/extract';
 import { extractBrowserLogin } from './extract';
 import { injectCookies, openBrowserWindow } from './shell-window';
 
@@ -59,6 +60,7 @@ const createBrowserAdapter = (id: ServiceId, displayName: string): ServiceAdapte
       data.landingUrl,
       `${displayName} — ${account.title}`,
       ctx,
+      { emailPassword: emailPasswordFor(account) ?? undefined },
     );
 
     return {

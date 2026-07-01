@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 import { ConnectionScreen } from '~/features/auth/ConnectionScreen';
 import { LoginScreen } from '~/features/auth/LoginScreen';
+import { DeepLinkLogin } from '~/features/inventory/DeepLinkLogin';
 import { InventoryView } from '~/features/inventory/InventoryView';
 import { LoginProgressModal } from '~/features/inventory/LoginProgressModal';
 import { MailView } from '~/features/mail/MailView';
@@ -10,6 +11,7 @@ import { SettingsView } from '~/features/settings/SettingsView';
 import { useLocaleSync } from '~/i18n/useLocaleSync';
 import { useAccountsStream, useAccountsStreamController } from '~/stores/accountsStream';
 import { useLoginSession } from '~/stores/loginSession';
+import { useMailTarget } from '~/stores/mailTarget';
 import { initSettingsStore } from '~/stores/settings';
 import { useView } from '~/stores/view';
 import { Shell } from '~/widgets/Shell/Shell';
@@ -42,6 +44,7 @@ export const App = () => {
       // doesn't stay stuck (the aborted backend stream won't emit its `done`).
       if (!next.authenticated) {
         useAccountsStream.getState().reset();
+        useAccountsStream.getState().setLaunchHandled(false);
         qc.setQueryData(['accounts'], []);
       }
       qc.invalidateQueries({ queryKey: ['accounts'] });
@@ -55,6 +58,14 @@ export const App = () => {
       if (evt.itemId !== sess.itemId) return;
       if (sess.step === 'done' || sess.error !== null) return;
       sess.setStep(evt.step, evt.detail);
+    });
+    return off;
+  }, []);
+
+  useEffect(() => {
+    const off = window.launcher.mail.onOpenRequest(({ emailPassword }) => {
+      useMailTarget.getState().setPending(emailPassword);
+      useView.getState().setView('mail');
     });
     return off;
   }, []);
@@ -86,17 +97,20 @@ export const App = () => {
     content = <ConnectionScreen onRetry={refetchStatus} />;
   } else {
     content = (
-      <Shell session={current.session}>
+      <>
         <AccountsStreamController />
-        {view === 'settings' ? (
-          <SettingsView />
-        ) : view === 'mail' ? (
-          <MailView />
-        ) : (
-          <InventoryView />
-        )}
-        <LoginProgressModal />
-      </Shell>
+        <Shell session={current.session}>
+          {view === 'settings' ? (
+            <SettingsView />
+          ) : view === 'mail' ? (
+            <MailView />
+          ) : (
+            <InventoryView />
+          )}
+          <LoginProgressModal />
+          <DeepLinkLogin />
+        </Shell>
+      </>
     );
   }
 
